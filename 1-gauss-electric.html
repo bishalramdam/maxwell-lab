@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gauss's Law Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=STIX+Two+Text:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#EDF1F4; --panel:#FFFFFF; --panel-2:#F5F7F9; --ink:#15202B; --muted:#5A6774; --line:#D3DAE1;
+  --stage:#F9FBFC; --grid:#E3E9EE;
+  --e:#E0580C; --b:#1868C9; --pos:#D0312D; --neg:#3552C9; --gold:#C79400; --copper:#B26A34;
+  --accent:#0A7C74; --accent-ink:#FFFFFF; --spole:#8795A3; --warn:#B7410E; --ok:#1F8A4C;
+  --f-display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --f-math:"STIX Two Text", "Cambria Math", "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#0D131A; --panel:#141D27; --panel-2:#101820; --ink:#E4EBF2; --muted:#93A2B1; --line:#24313F;
+    --stage:#0A1016; --grid:#151F29;
+    --e:#FF8B3D; --b:#4CA2FF; --pos:#FF5B50; --neg:#7D95FF; --gold:#F2C84B; --copper:#D98D52;
+    --accent:#3CC4BA; --accent-ink:#061312; --spole:#6E7D8C; --warn:#FF8A5B; --ok:#4CCB84;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0D131A; --panel:#141D27; --panel-2:#101820; --ink:#E4EBF2; --muted:#93A2B1; --line:#24313F;
+  --stage:#0A1016; --grid:#151F29;
+  --e:#FF8B3D; --b:#4CA2FF; --pos:#FF5B50; --neg:#7D95FF; --gold:#F2C84B; --copper:#D98D52;
+  --accent:#3CC4BA; --accent-ink:#061312; --spole:#6E7D8C; --warn:#FF8A5B; --ok:#4CCB84;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg); color:var(--ink); font:15px/1.6 var(--f-body); -webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* ---------- nav ---------- */
+.nav{position:sticky; top:0; z-index:10; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+.nav-in{max-width:1240px; margin:0 auto; padding:10px 20px; display:flex; align-items:center; gap:18px; flex-wrap:wrap}
+.brand{font:700 17px/1 var(--f-display); letter-spacing:-.01em; color:var(--ink); text-decoration:none; display:flex; align-items:center; gap:8px}
+.brand svg{width:22px;height:22px}
+.nav-links{display:flex; gap:4px; flex-wrap:wrap; flex:1}
+.nav-links a{font-size:13px; color:var(--muted); text-decoration:none; padding:6px 10px; border-radius:6px; white-space:nowrap}
+.nav-links a:hover{color:var(--ink); background:var(--panel)}
+.nav-links a[aria-current="page"]{color:var(--ink); background:var(--panel); box-shadow:inset 0 0 0 1px var(--line)}
+.nav-links a .n{font-family:var(--f-mono); font-size:11px; margin-right:5px; color:var(--accent)}
+@media (max-width:700px){ .nav-in{gap:8px 12px; padding:8px 16px} .brand{flex:1} .nav-links{order:3; flex:1 1 100%; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none} .wrap{padding-inline:16px} }
+.theme-btn{border:1px solid var(--line); background:var(--panel); border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer; color:var(--muted)}
+
+/* ---------- page ---------- */
+.wrap{max-width:1240px; margin:0 auto; padding-inline:20px; padding-block:28px 64px}
+.eyebrow{font:600 12px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--accent)}
+h1,h2,h3{font-family:var(--f-display); text-wrap:balance; letter-spacing:-.015em; margin:0}
+h1{font-size:clamp(28px,4.2vw,44px); line-height:1.08; font-weight:700}
+h2{font-size:22px; line-height:1.2; font-weight:650}
+h3{font-size:16px; font-weight:650}
+p{margin:0}
+.lede{color:var(--muted); font-size:17px; max-width:62ch}
+
+.lab-head{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:28px; align-items:end; margin-bottom:22px}
+.lab-head .t{display:flex; flex-direction:column; gap:12px}
+@media (max-width:860px){ .lab-head{grid-template-columns:1fr; gap:18px} }
+
+/* ---------- equations ---------- */
+.eqbox{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px 14px; display:flex; flex-direction:column; gap:10px}
+.eqbox-top{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap}
+.eq{font-family:var(--f-math); font-size:clamp(22px,3vw,30px); line-height:1.3; white-space:nowrap; overflow-x:auto; padding-block:4px}
+.eq .v{font-weight:700; font-style:normal}
+.eq i{font-style:italic}
+.eq sub{font-size:.55em}
+.frac{display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; font-size:.82em; line-height:1.15; margin-inline:.12em}
+.frac>span:first-child{border-bottom:1px solid currentColor; padding-inline:.15em}
+.eq .df, .eq .if{display:none}
+html:not(.form-int) .eq .df{display:inline}
+html.form-int .eq .if{display:inline}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; padding:2px; background:var(--panel-2)}
+.seg button{border:0; background:transparent; padding:5px 10px; border-radius:6px; font-size:12px; cursor:pointer; color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--panel); color:var(--ink); box-shadow:0 0 0 1px var(--line)}
+.eq-key{font-size:13px; color:var(--muted); display:flex; flex-wrap:wrap; gap:4px 14px}
+.eq-key b{font-family:var(--f-math); font-size:15px; color:var(--ink); font-weight:700}
+.eq-key i{font-family:var(--f-math); font-size:15px; color:var(--ink)}
+
+/* ---------- bench ---------- */
+.bench{display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:16px; align-items:start}
+@media (max-width:960px){ .bench{grid-template-columns:1fr} }
+.stage-col{display:flex; flex-direction:column; gap:10px; min-width:0}
+.toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.btn{border:1px solid var(--line); background:var(--panel); padding:7px 12px; border-radius:8px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; line-height:1.1}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.btn .dot{width:10px;height:10px;border-radius:50%}
+.btn[aria-pressed="true"]{box-shadow:inset 0 0 0 1.5px var(--accent); color:var(--accent)}
+.toolbar .sep{width:1px; align-self:stretch; background:var(--line); margin-inline:2px}
+.canvas-frame{position:relative; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--stage)}
+.canvas-frame canvas{display:block; width:100%; touch-action:none; user-select:none; -webkit-user-select:none}
+.hint{position:absolute; left:12px; bottom:10px; font-size:12px; color:var(--muted); background:color-mix(in srgb, var(--stage) 80%, transparent); padding:3px 8px; border-radius:6px; pointer-events:none}
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted)}
+.legend > span{display:inline-flex; align-items:center; gap:6px}
+.legend .sw{width:18px; height:3px; border-radius:2px}
+.legend .sw.dash{background:none!important; border-top:2px dashed; height:0}
+.strip-frame{border:1px solid var(--line); border-radius:10px; background:var(--stage); padding:8px 10px 6px}
+.strip-frame canvas{display:block; width:100%; height:120px}
+
+.side{display:flex; flex-direction:column; gap:14px}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px}
+.card h3{margin-bottom:10px; font-size:13px; font-family:var(--f-mono); font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.meter{display:grid; grid-template-columns:1fr auto; gap:6px 12px; align-items:baseline}
+.meter .k{font-size:13px; color:var(--muted)}
+.meter .k i, .meter .k b{font-family:var(--f-math); font-size:15px; color:var(--ink)}
+.meter .val{font:600 18px/1.2 var(--f-mono); font-variant-numeric:tabular-nums; text-align:right}
+.meter .val small{font-size:12px; color:var(--muted); font-weight:400; margin-left:3px}
+.meter hr{grid-column:1/-1; border:0; border-top:1px dashed var(--line); margin:4px 0; width:100%}
+.verdict{margin-top:10px; font-size:13px; padding:8px 10px; border-radius:8px; background:var(--panel-2); border:1px solid var(--line); display:flex; gap:8px; align-items:flex-start}
+.verdict .pill{font:600 11px/1 var(--f-mono); padding:4px 6px; border-radius:4px; background:var(--ok); color:var(--panel); white-space:nowrap; letter-spacing:.04em}
+.verdict.bad .pill{background:var(--warn)}
+.ctrl{display:flex; flex-direction:column; gap:4px; margin-bottom:12px}
+.ctrl:last-child{margin-bottom:0}
+.ctrl label{display:flex; align-items:baseline; gap:.3em; font-size:13px; color:var(--muted)}
+.ctrl label output{margin-left:auto}
+.ctrl label output{font-family:var(--f-mono); color:var(--ink); font-variant-numeric:tabular-nums}
+input[type=range]{width:100%; accent-color:var(--accent)}
+.check{display:flex; gap:8px; align-items:center; font-size:13px; cursor:pointer; margin-top:4px}
+.check input{accent-color:var(--accent); width:16px; height:16px}
+.try{margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:10px; counter-reset:t}
+.try li{font-size:13.5px; line-height:1.5; position:relative; padding-left:30px; counter-increment:t}
+.try li::before{content:counter(t); position:absolute; left:0; top:1px; font:600 11px/18px var(--f-mono); width:20px; height:20px; text-align:center; border-radius:50%; border:1px solid var(--line); color:var(--accent); box-sizing:border-box}
+
+.explain{margin-top:40px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:28px; border-top:1px solid var(--line); padding-top:28px}
+.explain > div{display:flex; flex-direction:column; gap:8px}
+.explain p{color:var(--muted); font-size:14.5px; max-width:60ch}
+.explain p b{color:var(--ink); font-weight:600}
+@media (max-width:860px){ .explain{grid-template-columns:1fr; gap:22px} }
+.pager{margin-top:40px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap}
+.pager a{display:flex; flex-direction:column; gap:2px; padding:12px 16px; border:1px solid var(--line); border-radius:10px; background:var(--panel); text-decoration:none; color:var(--ink); min-width:200px}
+.pager a small{color:var(--muted); font-size:12px}
+.pager a.next{text-align:right; margin-left:auto}
+.m{font-family:var(--f-math); font-size:1.08em}
+.m b{font-weight:700}
+@media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto!important} }
+
+</style>
+</head>
+<body>
+<header class="nav"><div class="nav-in"><a class="brand" href="index.html"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12c2.5-7 5-7 7.5 0s5 7 7.5 0 3.5-5 5-3" stroke="var(--e)" stroke-width="2" stroke-linecap="round"/><path d="M2 12c2.5 5 5 5 7.5 0s5-5 7.5 0 3.5 4 5 2" stroke="var(--b)" stroke-width="2" stroke-linecap="round" opacity=".8"/></svg>Maxwell Lab</a><nav class="nav-links" aria-label="Benches"><a href="index.html">Overview</a><a href="1-gauss-electric.html" aria-current="page"><span class="n">1</span>Gauss · E</a><a href="2-gauss-magnetic.html"><span class="n">2</span>Gauss · B</a><a href="3-faraday.html"><span class="n">3</span>Faraday</a><a href="4-ampere-maxwell.html"><span class="n">4</span>Ampère–Maxwell</a><a href="5-light.html"><span class="n">5</span>Light</a></nav><button class="theme-btn" id="themeBtn" type="button">Dark mode</button></div></header>
+<main class="wrap">
+  <section class="lab-head">
+    <div class="t">
+      <span class="eyebrow">Law 1 of 4 · Gauss's law for electricity</span>
+      <h1>Electric field lines start on positive charge and end on negative charge</h1>
+      <p class="lede">Wrap any closed surface around some charges. Count the field that pokes out minus the field that pokes in. The total depends only on the charge inside, never on the surface's size or shape.</p>
+    </div>
+    <div class="eqbox">
+      <div class="eqbox-top">
+        <span class="eyebrow" style="color:var(--muted)">The equation</span>
+        <div class="seg form-toggle" role="group" aria-label="Equation form">
+          <button type="button" data-form="diff" aria-pressed="true">Differential</button>
+          <button type="button" data-form="int" aria-pressed="false">Integral</button>
+        </div>
+      </div>
+      <div class="eq">
+        <span class="df">∇ · <span class="v">E</span> = <span class="frac"><span><i>ρ</i></span><span><i>ε</i><sub>0</sub></span></span></span>
+        <span class="if">∯<sub><i>S</i></sub> <span class="v">E</span> · d<span class="v">A</span> = <span class="frac"><span><i>Q</i><sub>enc</sub></span><span><i>ε</i><sub>0</sub></span></span></span>
+      </div>
+      <div class="eq-key">
+        <span><b>E</b> electric field</span><span><i>ρ</i> charge density</span><span><i>Q</i><sub>enc</sub> enclosed charge</span><span><i>ε</i><sub>0</sub> = 8.854 × 10⁻¹² F/m</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="bench">
+    <div class="stage-col">
+      <div class="toolbar">
+        <button class="btn" id="addPos" type="button"><span class="dot" style="background:var(--pos)"></span>Add +q</button>
+        <button class="btn" id="addNeg" type="button"><span class="dot" style="background:var(--neg)"></span>Add −q</button>
+        <span class="sep"></span>
+        <button class="btn" data-preset="single" type="button">Single charge</button>
+        <button class="btn" data-preset="dipole" type="button">Dipole</button>
+        <button class="btn" data-preset="outside" type="button">Charge outside</button>
+        <button class="btn" data-preset="mixed" type="button">+2q and −q</button>
+        <button class="btn" id="clearAll" type="button">Clear</button>
+      </div>
+      <div class="canvas-frame">
+        <canvas id="cv" aria-label="Electric field of point charges with a Gaussian surface"></canvas>
+        <div class="hint">Drag charges or the surface · drag the ring handle to resize · double-click a charge to remove it</div>
+      </div>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--e)"></span>Electric field line (dashes move along E)</span>
+        <span><span class="sw" style="background:var(--pos)"></span>Rim: flux leaving</span>
+        <span><span class="sw" style="background:var(--neg)"></span>Rim: flux entering</span>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="card">
+        <h3>Readings</h3>
+        <div class="meter">
+          <span class="k">Charge inside, <i>Q</i><sub>enc</sub></span><span class="val" id="rQ">0<small>q</small></span>
+          <span class="k">Measured flux, <i>ε</i><sub>0</sub><i>Φ</i><sub>E</sub></span><span class="val" id="rPhi">0.00<small>q</small></span>
+          <hr>
+          <span class="k">Field lines leaving</span><span class="val" id="rOut">0</span>
+          <span class="k">Field lines entering</span><span class="val" id="rIn">0</span>
+          <span class="k">Net lines (12 per q)</span><span class="val" id="rNet">0</span>
+        </div>
+        <div class="verdict" id="verdict"><span class="pill">MATCH</span><span id="verdictText">Flux equals the enclosed charge.</span></div>
+      </div>
+      <div class="card">
+        <h3>Surface</h3>
+        <div class="ctrl">
+          <label for="rad">Radius <output for="rad"></output></label>
+          <input type="range" id="rad" min="40" max="300" value="150">
+        </div>
+        <label class="check"><input type="checkbox" id="arrows"> Show field arrows</label>
+      </div>
+      <div class="card">
+        <h3>Try this</h3>
+        <ol class="try">
+          <li>With one charge inside, stretch the surface from tiny to huge. The flux reading doesn't move.</li>
+          <li>Load <b>Charge outside</b>. Lines cross the surface twice, once in and once out, so they cancel.</li>
+          <li>Load <b>Dipole</b> and enclose both charges. Net flux is zero even though the field inside is strong.</li>
+          <li>Park a charge exactly on the rim. The flux reads half of it.</li>
+        </ol>
+      </div>
+    </aside>
+  </section>
+
+  <section class="explain">
+    <div>
+      <h2>What you're measuring</h2>
+      <p>Flux is the amount of field passing through a surface. Where the rim glows red, field is leaving. Where it glows blue, field is entering. Add them up around the whole loop and you get <b>Q<sub>enc</sub>/ε₀</b>.</p>
+    </div>
+    <div>
+      <h2>Why it matters</h2>
+      <p>This is Coulomb's law rewritten so it works for any shape. Engineers use it to find the field inside coaxial cables, around power lines and between capacitor plates without doing a single messy integral. It also explains why a charged metal box keeps its interior field-free, the idea behind a Faraday cage.</p>
+    </div>
+    <div>
+      <h2>About this simulation</h2>
+      <p>The bench is a flat slice of space. Each charge behaves like a long charged rod seen end-on, so its field falls off as 1/<i>r</i> instead of 1/<i>r</i>². Gauss's law holds exactly in both cases, and the flux reading is computed by integrating <b>E · n̂</b> around the rim at 720 points.</p>
+    </div>
+  </section>
+
+  <nav class="pager" aria-label="Next and previous">
+    <a href="index.html"><small>← Overview</small>The four equations</a>
+    <a class="next" href="2-gauss-magnetic.html"><small>Next · Law 2 →</small>No magnetic monopoles</a>
+  </nav>
+</main>
+
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- theme colors ---------- */
+const C = {};
+const themeListeners = [];
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  ["bg","panel","panel-2","ink","muted","line","stage","grid","e","b","pos","neg","gold","copper","accent","spole","warn","ok"]
+    .forEach(k => C[k] = cs.getPropertyValue("--" + k).trim());
+  themeListeners.forEach(f => f());
+}
+function rgba(hex, a) {
+  let h = hex.replace("#", "");
+  if (h.length === 3) h = h.split("").map(c => c + c).join("");
+  const n = parseInt(h, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+readColors();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readColors);
+function isDark() {
+  const t = document.documentElement.dataset.theme;
+  return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+}
+document.addEventListener("DOMContentLoaded", () => {
+  const tb = $("#themeBtn");
+  const label = () => tb && (tb.textContent = isDark() ? "Light mode" : "Dark mode");
+  if (tb) { label(); tb.addEventListener("click", () => { document.documentElement.dataset.theme = isDark() ? "light" : "dark"; readColors(); label(); }); }
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", label);
+  // equation form toggle
+  $$(".form-toggle").forEach(seg => {
+    const btns = $$("button", seg);
+    btns.forEach(b => b.addEventListener("click", () => {
+      document.documentElement.classList.toggle("form-int", b.dataset.form === "int");
+      $$(".form-toggle button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.form === b.dataset.form)));
+    }));
+  });
+});
+
+/* ---------- stage: canvas with a fixed virtual coordinate system ---------- */
+class Stage {
+  constructor(canvas, VW, VH) {
+    this.c = canvas; this.ctx = canvas.getContext("2d");
+    this.VW = VW; this.VH = VH; this.s = 1; this.visible = true; this.onresize = null;
+    canvas.style.aspectRatio = `${VW} / ${VH}`;
+    new ResizeObserver(() => this.resize()).observe(canvas);
+    new IntersectionObserver(es => { this.visible = es[0].isIntersecting; }).observe(canvas);
+    this.resize();
+  }
+  resize() {
+    const r = this.c.getBoundingClientRect();
+    if (!r.width) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.c.width = Math.round(r.width * dpr);
+    this.c.height = Math.round(r.width * dpr * this.VH / this.VW);
+    this.s = this.c.width / this.VW;
+    this.onresize && this.onresize();
+  }
+  begin() {
+    const x = this.ctx;
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    x.fillStyle = C.stage; x.fillRect(0, 0, this.c.width, this.c.height);
+    x.setTransform(this.s, 0, 0, this.s, 0, 0);
+    return x;
+  }
+  toV(e) {
+    const r = this.c.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width * this.VW, y: (e.clientY - r.top) / r.height * this.VH };
+  }
+  grid(step = 40) {
+    const x = this.ctx; x.strokeStyle = C.grid; x.lineWidth = 1; x.beginPath();
+    for (let i = step; i < this.VW; i += step) { x.moveTo(i, 0); x.lineTo(i, this.VH); }
+    for (let j = step; j < this.VH; j += step) { x.moveTo(0, j); x.lineTo(this.VW, j); }
+    x.stroke();
+  }
+}
+
+/* ---------- drag helper ----------
+   getTargets() returns [{hit(p)->bool, start(p), move(p), end(), cursor}] in priority order */
+function makeDraggable(stage, getTargets, onChange) {
+  let active = null, pid = null;
+  const cv = stage.c;
+  cv.addEventListener("pointerdown", e => {
+    const p = stage.toV(e);
+    for (const t of getTargets()) {
+      if (t.hit(p)) { active = t; pid = e.pointerId; cv.setPointerCapture(pid); t.start && t.start(p); cv.style.cursor = "grabbing"; e.preventDefault(); onChange && onChange(); return; }
+    }
+  });
+  cv.addEventListener("pointermove", e => {
+    const p = stage.toV(e);
+    if (active && e.pointerId === pid) { active.move(p); onChange && onChange(); return; }
+    const t = getTargets().find(t => t.hit(p));
+    cv.style.cursor = t ? (t.cursor || "grab") : "default";
+  });
+  const end = e => { if (active && e.pointerId === pid) { active.end && active.end(); active = null; cv.style.cursor = "default"; onChange && onChange(); } };
+  cv.addEventListener("pointerup", end);
+  cv.addEventListener("pointercancel", end);
+}
+
+/* ---------- animation loop ---------- */
+function animate(fn) {
+  let last = performance.now();
+  function f(t) {
+    const dt = Math.min(0.05, (t - last) / 1000); last = t;
+    fn(dt, t / 1000);
+    requestAnimationFrame(f);
+  }
+  requestAnimationFrame(f);
+}
+
+/* ---------- drawing helpers ---------- */
+function arrow(x, x1, y1, x2, y2, h = 7) {
+  const a = Math.atan2(y2 - y1, x2 - x1);
+  x.beginPath(); x.moveTo(x1, y1); x.lineTo(x2, y2); x.stroke();
+  x.beginPath(); x.moveTo(x2, y2);
+  x.lineTo(x2 - h * Math.cos(a - 0.45), y2 - h * Math.sin(a - 0.45));
+  x.lineTo(x2 - h * Math.cos(a + 0.45), y2 - h * Math.sin(a + 0.45));
+  x.closePath(); x.fill();
+}
+function polyline(x, pts) {
+  x.beginPath(); x.moveTo(pts[0], pts[1]);
+  for (let i = 2; i < pts.length; i += 2) x.lineTo(pts[i], pts[i + 1]);
+}
+function label(x, text, px, py, { color = C.muted, size = 13, align = "left", font = "var(--f-mono)", weight = 500 } = {}) {
+  x.fillStyle = color; x.textAlign = align; x.textBaseline = "middle";
+  x.font = `${weight} ${size}px "IBM Plex Mono", ui-monospace, monospace`;
+  x.fillText(text, px, py);
+}
+
+/* Field line tracer (RK2, normalized direction). field(x,y) -> [bx,by]. sign = +1 along field, -1 against. */
+function traceLine(field, x, y, sign, { step = 4, max = 2000, stop } = {}) {
+  const pts = [x, y];
+  for (let i = 0; i < max; i++) {
+    let [bx, by] = field(x, y); let m = Math.hypot(bx, by);
+    if (m < 1e-12) break;
+    const hx = x + sign * 0.5 * step * bx / m, hy = y + sign * 0.5 * step * by / m;
+    [bx, by] = field(hx, hy); m = Math.hypot(bx, by);
+    if (m < 1e-12) break;
+    x += sign * step * bx / m; y += sign * step * by / m;
+    pts.push(x, y);
+    const s = stop && stop(x, y, i);
+    if (s) return { pts, end: s };
+  }
+  return { pts, end: null };
+}
+
+/* Count signed crossings of a polyline (oriented along the field) through a circle. */
+function countCrossings(pts, cx, cy, R) {
+  let out = 0, inn = 0;
+  let prev = Math.hypot(pts[0] - cx, pts[1] - cy) - R;
+  for (let i = 2; i < pts.length; i += 2) {
+    const d = Math.hypot(pts[i] - cx, pts[i + 1] - cy) - R;
+    if (prev < 0 && d >= 0) out++;
+    else if (prev >= 0 && d < 0) inn++;
+    prev = d;
+  }
+  return [out, inn];
+}
+
+/* ---------- strip chart ---------- */
+class Strip {
+  constructor(canvas, series, span = 6) {
+    this.c = canvas; this.x = canvas.getContext("2d"); this.series = series; this.span = span;
+    this.data = []; // {t, v:[...]}
+    this.scale = series.map(s => s.min || 1e-9);
+    new ResizeObserver(() => this.size()).observe(canvas); this.size();
+  }
+  size() { const r = this.c.getBoundingClientRect(); const d = Math.min(devicePixelRatio || 1, 2); this.c.width = r.width * d; this.c.height = r.height * d; this.d = d; }
+  push(t, v) { this.data.push({ t, v }); while (this.data.length && this.data[0].t < t - this.span) this.data.shift(); }
+  clear() { this.data = []; }
+  draw() {
+    const x = this.x, W = this.c.width / this.d, H = this.c.height / this.d;
+    x.setTransform(this.d, 0, 0, this.d, 0, 0); x.clearRect(0, 0, W, H);
+    x.strokeStyle = C.grid; x.lineWidth = 1; x.beginPath();
+    for (let i = 1; i < 6; i++) { x.moveTo(W * i / 6, 0); x.lineTo(W * i / 6, H); }
+    x.stroke();
+    x.strokeStyle = C.line; x.beginPath(); x.moveTo(0, H / 2); x.lineTo(W, H / 2); x.stroke();
+    if (this.data.length < 2) return;
+    const tEnd = this.data[this.data.length - 1].t, t0 = tEnd - this.span;
+    this.series.forEach((s, k) => {
+      let mx = s.fixed || 0;
+      if (!s.fixed) { for (const d of this.data) mx = Math.max(mx, Math.abs(d.v[k])); mx = Math.max(mx, s.min || 1e-9); this.scale[k] = lerp(this.scale[k], mx, 0.08); mx = this.scale[k]; }
+      x.strokeStyle = C[s.color] || s.color; x.lineWidth = s.width || 2; x.setLineDash(s.dash || []);
+      x.beginPath();
+      this.data.forEach((d, i) => {
+        const px = (d.t - t0) / this.span * W, py = H / 2 - d.v[k] / mx * (H / 2 - 8);
+        i ? x.lineTo(px, py) : x.moveTo(px, py);
+      });
+      x.stroke(); x.setLineDash([]);
+    });
+  }
+}
+
+function fmt(v, d = 2) { const s = v.toFixed(d); return (s === "-" + (0).toFixed(d)) ? (0).toFixed(d) : s; }
+function signed(v, d = 2) { const s = fmt(v, d); return (parseFloat(s) > 0 ? "+" : "") + s; }
+function bindRange(id, fn) {
+  const el = document.getElementById(id), out = document.querySelector(`output[for="${id}"]`);
+  const upd = () => { const r = fn(parseFloat(el.value)); if (out && r !== undefined) out.textContent = r; };
+  el.addEventListener("input", upd); upd(); return el;
+}
+function pressGroup(btns, onPick) {
+  btns.forEach(b => b.addEventListener("click", () => { btns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); onPick(b); }));
+}
+
+</script>
+<script>
+(() => {
+const VW = 1000, VH = 620, LPQ = 12;
+const st = new Stage($("#cv"), VW, VH);
+let charges = [], surf = { x: 500, y: 310, R: 150 };
+let lines = [], rim = [], flux = 0, counts = [0, 0], dirty = true, phase = 0;
+const showArrows = $("#arrows");
+
+function E(x, y) {
+  let ex = 0, ey = 0;
+  for (const c of charges) {
+    const dx = x - c.x, dy = y - c.y, r2 = dx * dx + dy * dy + 4;
+    ex += c.q * dx / r2; ey += c.q * dy / r2;
+  }
+  return [ex, ey];
+}
+
+function compute() {
+  lines = [];
+  const tp = charges.reduce((s, c) => s + Math.max(0, c.q), 0);
+  const tn = charges.reduce((s, c) => s + Math.max(0, -c.q), 0);
+  const fromPos = tp >= tn, sign = fromPos ? 1 : -1;
+  charges.forEach((src, si) => {
+    if (fromPos ? src.q <= 0 : src.q >= 0) return;
+    const n = LPQ * Math.abs(src.q);
+    for (let k = 0; k < n; k++) {
+      const a = (k + 0.5) / n * TAU + si * 0.37;
+      const res = traceLine(E, src.x + 11 * Math.cos(a), src.y + 11 * Math.sin(a), sign, {
+        step: 4, max: 1400,
+        stop: (x, y) => {
+          if (x < -200 || x > VW + 200 || y < -200 || y > VH + 200) return "out";
+          for (const c of charges) if (c !== src && Math.sign(c.q) !== Math.sign(src.q) && (x - c.x) ** 2 + (y - c.y) ** 2 < 81) return "sink";
+          return null;
+        }
+      });
+      let p = res.pts;
+      if (sign < 0) { const r = []; for (let i = p.length - 2; i >= 0; i -= 2) r.push(p[i], p[i + 1]); p = r; }
+      lines.push(p);
+    }
+  });
+  // numeric flux
+  const N = 720; let s = 0; rim = [];
+  for (let i = 0; i < N; i++) {
+    const t = (i + 0.5) / N * TAU, cx = Math.cos(t), cy = Math.sin(t);
+    const [ex, ey] = E(surf.x + surf.R * cx, surf.y + surf.R * cy);
+    const en = ex * cx + ey * cy;
+    s += en * surf.R * TAU / N;
+    if (i % 4 === 0) rim.push(en * surf.R);
+  }
+  flux = s / TAU;
+  counts = [0, 0];
+  for (const p of lines) { const [o, n] = countCrossings(p, surf.x, surf.y, surf.R); counts[0] += o; counts[1] += n; }
+  updateReadout();
+  dirty = false;
+}
+
+function updateReadout() {
+  let qin = 0, qrim = 0;
+  for (const c of charges) {
+    const d = Math.hypot(c.x - surf.x, c.y - surf.y);
+    if (Math.abs(d - surf.R) < 9) qrim += c.q; else if (d < surf.R) qin += c.q;
+  }
+  const qs = v => (v > 0 ? "+" : "") + v;
+  $("#rQ").innerHTML = (qrim ? `${qs(qin)} <small>+ ${qs(qrim)} on rim</small>` : qs(qin)) + "<small>q</small>";
+  $("#rPhi").innerHTML = signed(flux) + "<small>q</small>";
+  $("#rOut").textContent = counts[0];
+  $("#rIn").textContent = counts[1];
+  $("#rNet").textContent = (counts[0] - counts[1] > 0 ? "+" : "") + (counts[0] - counts[1]);
+  const v = $("#verdict"), vt = $("#verdictText");
+  if (qrim) { v.classList.add("bad"); v.querySelector(".pill").textContent = "ON RIM"; vt.textContent = "A charge sits on the surface, so only about half its field leaves. Nudge it in or out."; }
+  else if (Math.abs(flux - qin) < 0.06) {
+    v.classList.remove("bad"); v.querySelector(".pill").textContent = "MATCH";
+    vt.textContent = qin === 0 ? (charges.length ? "No net charge inside, so every line that enters also leaves." : "Empty space: no charge, no flux. Add a charge to begin.") : `ε₀Φ = ${signed(flux)}q equals Q_enc = ${qs(qin)}q.`;
+  } else { v.classList.add("bad"); v.querySelector(".pill").textContent = "CHECK"; vt.textContent = "A charge is very close to the rim; the numeric integral is struggling."; }
+}
+
+function draw() {
+  const x = st.begin();
+  st.grid(40);
+  // surface fill
+  x.fillStyle = rgba(C.accent, 0.06);
+  x.beginPath(); x.arc(surf.x, surf.y, surf.R, 0, TAU); x.fill();
+  // field arrows
+  if (showArrows.checked) {
+    x.strokeStyle = rgba(C.muted, 0.55); x.fillStyle = rgba(C.muted, 0.55); x.lineWidth = 1.2;
+    for (let gx = 25; gx < VW; gx += 50) for (let gy = 25; gy < VH; gy += 50) {
+      const [ex, ey] = E(gx, gy), m = Math.hypot(ex, ey); if (m < 1e-6) continue;
+      const L = clamp(6 + Math.log10(m * 1e3 + 1) * 9, 6, 22);
+      arrow(x, gx - ex / m * L / 2, gy - ey / m * L / 2, gx + ex / m * L / 2, gy + ey / m * L / 2, 5);
+    }
+  }
+  // field lines
+  x.lineWidth = 1.4; x.strokeStyle = rgba(C.e, 0.35);
+  for (const p of lines) { polyline(x, p); x.stroke(); }
+  x.lineWidth = 2; x.strokeStyle = C.e; x.setLineDash([5, 15]); x.lineDashOffset = -phase;
+  for (const p of lines) { polyline(x, p); x.stroke(); }
+  x.setLineDash([]);
+  // rim
+  const n = rim.length;
+  x.lineWidth = 5; x.lineCap = "butt";
+  for (let i = 0; i < n; i++) {
+    const a0 = i / n * TAU, a1 = (i + 1) / n * TAU, v = rim[i];
+    const a = 0.12 + 0.88 * Math.tanh(Math.abs(v) * 1.4);
+    x.strokeStyle = rgba(v >= 0 ? C.pos : C.neg, a);
+    x.beginPath(); x.arc(surf.x, surf.y, surf.R, a0, a1 + 0.005); x.stroke();
+  }
+  x.lineWidth = 1; x.strokeStyle = rgba(C.ink, 0.4); x.setLineDash([4, 5]);
+  x.beginPath(); x.arc(surf.x, surf.y, surf.R + 7, 0, TAU); x.stroke(); x.setLineDash([]);
+  label(x, "Gaussian surface S", surf.x, surf.y - surf.R - 20, { align: "center", color: C.muted, size: 12 });
+  // handle
+  x.fillStyle = C.accent; x.strokeStyle = C.stage; x.lineWidth = 2;
+  x.beginPath(); x.arc(surf.x + surf.R, surf.y, 8, 0, TAU); x.fill(); x.stroke();
+  // charges
+  for (const c of charges) {
+    const r = 13 + 3 * (Math.abs(c.q) - 1), col = c.q > 0 ? C.pos : C.neg;
+    const g = x.createRadialGradient(c.x, c.y, r * 0.5, c.x, c.y, r * 2.6);
+    g.addColorStop(0, rgba(col, 0.35)); g.addColorStop(1, rgba(col, 0));
+    x.fillStyle = g; x.beginPath(); x.arc(c.x, c.y, r * 2.6, 0, TAU); x.fill();
+    x.fillStyle = col; x.beginPath(); x.arc(c.x, c.y, r, 0, TAU); x.fill();
+    x.strokeStyle = "#fff"; x.lineWidth = 2.4; x.beginPath();
+    x.moveTo(c.x - 6, c.y); x.lineTo(c.x + 6, c.y); if (c.q > 0) { x.moveTo(c.x, c.y - 6); x.lineTo(c.x, c.y + 6); } x.stroke();
+    if (Math.abs(c.q) > 1) label(x, (c.q > 0 ? "+" : "−") + Math.abs(c.q) + "q", c.x, c.y + r + 12, { align: "center", color: C.ink, size: 12, weight: 600 });
+  }
+}
+
+/* interaction */
+let grabOff = null;
+makeDraggable(st, () => [
+  ...charges.map(c => ({
+    hit: p => Math.hypot(p.x - c.x, p.y - c.y) < 18,
+    start: p => grabOff = [c.x - p.x, c.y - p.y],
+    move: p => { c.x = clamp(p.x + grabOff[0], -20, VW + 20); c.y = clamp(p.y + grabOff[1], -20, VH + 20); dirty = true; },
+    end: () => { if (c.x < 0 || c.x > VW || c.y < 0 || c.y > VH) { charges = charges.filter(k => k !== c); dirty = true; } }
+  })),
+  { hit: p => Math.hypot(p.x - surf.x - surf.R, p.y - surf.y) < 14, cursor: "ew-resize",
+    move: p => { surf.R = clamp(Math.hypot(p.x - surf.x, p.y - surf.y), 40, 300); $("#rad").value = surf.R; $('output[for="rad"]').textContent = Math.round(surf.R); dirty = true; } },
+  { hit: p => Math.hypot(p.x - surf.x, p.y - surf.y) < surf.R, cursor: "move",
+    start: p => grabOff = [surf.x - p.x, surf.y - p.y],
+    move: p => { surf.x = clamp(p.x + grabOff[0], 0, VW); surf.y = clamp(p.y + grabOff[1], 0, VH); dirty = true; } }
+]);
+st.c.addEventListener("dblclick", e => {
+  const p = st.toV(e);
+  const c = charges.find(c => Math.hypot(p.x - c.x, p.y - c.y) < 18);
+  if (c) { charges = charges.filter(k => k !== c); dirty = true; }
+});
+
+function addCharge(q) {
+  const spots = [[200, 150], [800, 460], [800, 160], [200, 470], [500, 120], [500, 520], [120, 310], [880, 310]];
+  const free = spots.find(s => !charges.some(c => Math.hypot(c.x - s[0], c.y - s[1]) < 40)) || [500 + (Math.random() - .5) * 400, 310 + (Math.random() - .5) * 300];
+  charges.push({ x: free[0], y: free[1], q }); dirty = true;
+}
+$("#addPos").onclick = () => addCharge(1);
+$("#addNeg").onclick = () => addCharge(-1);
+$("#clearAll").onclick = () => { charges = []; dirty = true; };
+const presets = {
+  single: () => { charges = [{ x: 500, y: 310, q: 1 }]; surf = { x: 500, y: 310, R: 150 }; },
+  dipole: () => { charges = [{ x: 430, y: 310, q: 1 }, { x: 570, y: 310, q: -1 }]; surf = { x: 500, y: 310, R: 160 }; },
+  outside: () => { charges = [{ x: 380, y: 300, q: 1 }, { x: 740, y: 330, q: 1 }]; surf = { x: 400, y: 300, R: 170 }; },
+  mixed: () => { charges = [{ x: 420, y: 300, q: 2 }, { x: 640, y: 340, q: -1 }]; surf = { x: 420, y: 300, R: 130 }; },
+};
+$$("[data-preset]").forEach(b => b.onclick = () => { presets[b.dataset.preset](); $("#rad").value = surf.R; $('output[for="rad"]').textContent = Math.round(surf.R); dirty = true; });
+bindRange("rad", v => { surf.R = v; dirty = true; return Math.round(v); });
+showArrows.onchange = () => {};
+
+presets.outside(); $("#rad").value = surf.R; $('output[for="rad"]').textContent = surf.R;
+themeListeners.push(() => {});
+animate(dt => {
+  if (!st.visible) return;
+  if (dirty) compute();
+  if (!reduceMotion) phase += dt * 28;
+  draw();
+});
+})();
+
+</script>
+</body>
+</html>

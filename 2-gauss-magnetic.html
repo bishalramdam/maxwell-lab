@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>No Monopoles Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=STIX+Two+Text:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#EDF1F4; --panel:#FFFFFF; --panel-2:#F5F7F9; --ink:#15202B; --muted:#5A6774; --line:#D3DAE1;
+  --stage:#F9FBFC; --grid:#E3E9EE;
+  --e:#E0580C; --b:#1868C9; --pos:#D0312D; --neg:#3552C9; --gold:#C79400; --copper:#B26A34;
+  --accent:#0A7C74; --accent-ink:#FFFFFF; --spole:#8795A3; --warn:#B7410E; --ok:#1F8A4C;
+  --f-display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --f-math:"STIX Two Text", "Cambria Math", "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#0D131A; --panel:#141D27; --panel-2:#101820; --ink:#E4EBF2; --muted:#93A2B1; --line:#24313F;
+    --stage:#0A1016; --grid:#151F29;
+    --e:#FF8B3D; --b:#4CA2FF; --pos:#FF5B50; --neg:#7D95FF; --gold:#F2C84B; --copper:#D98D52;
+    --accent:#3CC4BA; --accent-ink:#061312; --spole:#6E7D8C; --warn:#FF8A5B; --ok:#4CCB84;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0D131A; --panel:#141D27; --panel-2:#101820; --ink:#E4EBF2; --muted:#93A2B1; --line:#24313F;
+  --stage:#0A1016; --grid:#151F29;
+  --e:#FF8B3D; --b:#4CA2FF; --pos:#FF5B50; --neg:#7D95FF; --gold:#F2C84B; --copper:#D98D52;
+  --accent:#3CC4BA; --accent-ink:#061312; --spole:#6E7D8C; --warn:#FF8A5B; --ok:#4CCB84;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg); color:var(--ink); font:15px/1.6 var(--f-body); -webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* ---------- nav ---------- */
+.nav{position:sticky; top:0; z-index:10; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+.nav-in{max-width:1240px; margin:0 auto; padding:10px 20px; display:flex; align-items:center; gap:18px; flex-wrap:wrap}
+.brand{font:700 17px/1 var(--f-display); letter-spacing:-.01em; color:var(--ink); text-decoration:none; display:flex; align-items:center; gap:8px}
+.brand svg{width:22px;height:22px}
+.nav-links{display:flex; gap:4px; flex-wrap:wrap; flex:1}
+.nav-links a{font-size:13px; color:var(--muted); text-decoration:none; padding:6px 10px; border-radius:6px; white-space:nowrap}
+.nav-links a:hover{color:var(--ink); background:var(--panel)}
+.nav-links a[aria-current="page"]{color:var(--ink); background:var(--panel); box-shadow:inset 0 0 0 1px var(--line)}
+.nav-links a .n{font-family:var(--f-mono); font-size:11px; margin-right:5px; color:var(--accent)}
+@media (max-width:700px){ .nav-in{gap:8px 12px; padding:8px 16px} .brand{flex:1} .nav-links{order:3; flex:1 1 100%; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none} .wrap{padding-inline:16px} }
+.theme-btn{border:1px solid var(--line); background:var(--panel); border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer; color:var(--muted)}
+
+/* ---------- page ---------- */
+.wrap{max-width:1240px; margin:0 auto; padding-inline:20px; padding-block:28px 64px}
+.eyebrow{font:600 12px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--accent)}
+h1,h2,h3{font-family:var(--f-display); text-wrap:balance; letter-spacing:-.015em; margin:0}
+h1{font-size:clamp(28px,4.2vw,44px); line-height:1.08; font-weight:700}
+h2{font-size:22px; line-height:1.2; font-weight:650}
+h3{font-size:16px; font-weight:650}
+p{margin:0}
+.lede{color:var(--muted); font-size:17px; max-width:62ch}
+
+.lab-head{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:28px; align-items:end; margin-bottom:22px}
+.lab-head .t{display:flex; flex-direction:column; gap:12px}
+@media (max-width:860px){ .lab-head{grid-template-columns:1fr; gap:18px} }
+
+/* ---------- equations ---------- */
+.eqbox{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px 14px; display:flex; flex-direction:column; gap:10px}
+.eqbox-top{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap}
+.eq{font-family:var(--f-math); font-size:clamp(22px,3vw,30px); line-height:1.3; white-space:nowrap; overflow-x:auto; padding-block:4px}
+.eq .v{font-weight:700; font-style:normal}
+.eq i{font-style:italic}
+.eq sub{font-size:.55em}
+.frac{display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; font-size:.82em; line-height:1.15; margin-inline:.12em}
+.frac>span:first-child{border-bottom:1px solid currentColor; padding-inline:.15em}
+.eq .df, .eq .if{display:none}
+html:not(.form-int) .eq .df{display:inline}
+html.form-int .eq .if{display:inline}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; padding:2px; background:var(--panel-2)}
+.seg button{border:0; background:transparent; padding:5px 10px; border-radius:6px; font-size:12px; cursor:pointer; color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--panel); color:var(--ink); box-shadow:0 0 0 1px var(--line)}
+.eq-key{font-size:13px; color:var(--muted); display:flex; flex-wrap:wrap; gap:4px 14px}
+.eq-key b{font-family:var(--f-math); font-size:15px; color:var(--ink); font-weight:700}
+.eq-key i{font-family:var(--f-math); font-size:15px; color:var(--ink)}
+
+/* ---------- bench ---------- */
+.bench{display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:16px; align-items:start}
+@media (max-width:960px){ .bench{grid-template-columns:1fr} }
+.stage-col{display:flex; flex-direction:column; gap:10px; min-width:0}
+.toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.btn{border:1px solid var(--line); background:var(--panel); padding:7px 12px; border-radius:8px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; line-height:1.1}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.btn .dot{width:10px;height:10px;border-radius:50%}
+.btn[aria-pressed="true"]{box-shadow:inset 0 0 0 1.5px var(--accent); color:var(--accent)}
+.toolbar .sep{width:1px; align-self:stretch; background:var(--line); margin-inline:2px}
+.canvas-frame{position:relative; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--stage)}
+.canvas-frame canvas{display:block; width:100%; touch-action:none; user-select:none; -webkit-user-select:none}
+.hint{position:absolute; left:12px; bottom:10px; font-size:12px; color:var(--muted); background:color-mix(in srgb, var(--stage) 80%, transparent); padding:3px 8px; border-radius:6px; pointer-events:none}
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted)}
+.legend > span{display:inline-flex; align-items:center; gap:6px}
+.legend .sw{width:18px; height:3px; border-radius:2px}
+.legend .sw.dash{background:none!important; border-top:2px dashed; height:0}
+.strip-frame{border:1px solid var(--line); border-radius:10px; background:var(--stage); padding:8px 10px 6px}
+.strip-frame canvas{display:block; width:100%; height:120px}
+
+.side{display:flex; flex-direction:column; gap:14px}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px}
+.card h3{margin-bottom:10px; font-size:13px; font-family:var(--f-mono); font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.meter{display:grid; grid-template-columns:1fr auto; gap:6px 12px; align-items:baseline}
+.meter .k{font-size:13px; color:var(--muted)}
+.meter .k i, .meter .k b{font-family:var(--f-math); font-size:15px; color:var(--ink)}
+.meter .val{font:600 18px/1.2 var(--f-mono); font-variant-numeric:tabular-nums; text-align:right}
+.meter .val small{font-size:12px; color:var(--muted); font-weight:400; margin-left:3px}
+.meter hr{grid-column:1/-1; border:0; border-top:1px dashed var(--line); margin:4px 0; width:100%}
+.verdict{margin-top:10px; font-size:13px; padding:8px 10px; border-radius:8px; background:var(--panel-2); border:1px solid var(--line); display:flex; gap:8px; align-items:flex-start}
+.verdict .pill{font:600 11px/1 var(--f-mono); padding:4px 6px; border-radius:4px; background:var(--ok); color:var(--panel); white-space:nowrap; letter-spacing:.04em}
+.verdict.bad .pill{background:var(--warn)}
+.ctrl{display:flex; flex-direction:column; gap:4px; margin-bottom:12px}
+.ctrl:last-child{margin-bottom:0}
+.ctrl label{display:flex; align-items:baseline; gap:.3em; font-size:13px; color:var(--muted)}
+.ctrl label output{margin-left:auto}
+.ctrl label output{font-family:var(--f-mono); color:var(--ink); font-variant-numeric:tabular-nums}
+input[type=range]{width:100%; accent-color:var(--accent)}
+.check{display:flex; gap:8px; align-items:center; font-size:13px; cursor:pointer; margin-top:4px}
+.check input{accent-color:var(--accent); width:16px; height:16px}
+.try{margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:10px; counter-reset:t}
+.try li{font-size:13.5px; line-height:1.5; position:relative; padding-left:30px; counter-increment:t}
+.try li::before{content:counter(t); position:absolute; left:0; top:1px; font:600 11px/18px var(--f-mono); width:20px; height:20px; text-align:center; border-radius:50%; border:1px solid var(--line); color:var(--accent); box-sizing:border-box}
+
+.explain{margin-top:40px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:28px; border-top:1px solid var(--line); padding-top:28px}
+.explain > div{display:flex; flex-direction:column; gap:8px}
+.explain p{color:var(--muted); font-size:14.5px; max-width:60ch}
+.explain p b{color:var(--ink); font-weight:600}
+@media (max-width:860px){ .explain{grid-template-columns:1fr; gap:22px} }
+.pager{margin-top:40px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap}
+.pager a{display:flex; flex-direction:column; gap:2px; padding:12px 16px; border:1px solid var(--line); border-radius:10px; background:var(--panel); text-decoration:none; color:var(--ink); min-width:200px}
+.pager a small{color:var(--muted); font-size:12px}
+.pager a.next{text-align:right; margin-left:auto}
+.m{font-family:var(--f-math); font-size:1.08em}
+.m b{font-weight:700}
+@media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto!important} }
+
+</style>
+</head>
+<body>
+<header class="nav"><div class="nav-in"><a class="brand" href="index.html"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12c2.5-7 5-7 7.5 0s5 7 7.5 0 3.5-5 5-3" stroke="var(--e)" stroke-width="2" stroke-linecap="round"/><path d="M2 12c2.5 5 5 5 7.5 0s5-5 7.5 0 3.5 4 5 2" stroke="var(--b)" stroke-width="2" stroke-linecap="round" opacity=".8"/></svg>Maxwell Lab</a><nav class="nav-links" aria-label="Benches"><a href="index.html">Overview</a><a href="1-gauss-electric.html"><span class="n">1</span>Gauss · E</a><a href="2-gauss-magnetic.html" aria-current="page"><span class="n">2</span>Gauss · B</a><a href="3-faraday.html"><span class="n">3</span>Faraday</a><a href="4-ampere-maxwell.html"><span class="n">4</span>Ampère–Maxwell</a><a href="5-light.html"><span class="n">5</span>Light</a></nav><button class="theme-btn" id="themeBtn" type="button">Dark mode</button></div></header>
+<main class="wrap">
+  <section class="lab-head">
+    <div class="t">
+      <span class="eyebrow">Law 2 of 4 · Gauss's law for magnetism</span>
+      <h1>Magnetic field lines never start or stop. Every one is a closed loop.</h1>
+      <p class="lede">Try to trap a north pole inside a surface. For every line that leaves, one comes back in through the magnet itself. Net magnetic flux through any closed surface is always zero.</p>
+    </div>
+    <div class="eqbox">
+      <div class="eqbox-top">
+        <span class="eyebrow" style="color:var(--muted)">The equation</span>
+        <div class="seg form-toggle" role="group" aria-label="Equation form">
+          <button type="button" data-form="diff" aria-pressed="true">Differential</button>
+          <button type="button" data-form="int" aria-pressed="false">Integral</button>
+        </div>
+      </div>
+      <div class="eq">
+        <span class="df">∇ · <span class="v">B</span> = 0</span>
+        <span class="if">∯<sub><i>S</i></sub> <span class="v">B</span> · d<span class="v">A</span> = 0</span>
+      </div>
+      <div class="eq-key">
+        <span><b>B</b> magnetic field</span><span>d<b>A</b> outward surface element</span><span>No magnetic charge exists to put on the right side</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="bench">
+    <div class="stage-col">
+      <div class="toolbar">
+        <button class="btn primary" id="cut" type="button">Cut the magnet in half</button>
+        <button class="btn" id="rotate" type="button">Rotate 45°</button>
+        <button class="btn" id="flip" type="button">Flip N/S</button>
+        <button class="btn" id="add" type="button">Add a magnet</button>
+        <button class="btn" id="reset" type="button">Reset</button>
+      </div>
+      <div class="canvas-frame">
+        <canvas id="cv" aria-label="Bar magnet field lines with a closed surface"></canvas>
+        <div class="hint">Drag magnets or the surface · drag the ring handle to resize · click a magnet to select it</div>
+      </div>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--b)"></span>Magnetic field line</span>
+        <span><span class="sw" style="background:var(--pos)"></span>Rim: flux leaving</span>
+        <span><span class="sw" style="background:var(--neg)"></span>Rim: flux entering</span>
+        <span><span class="dot" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--pos)"></span>North end</span>
+        <span><span class="dot" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--spole)"></span>South end</span>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="card">
+        <h3>Readings</h3>
+        <div class="meter">
+          <span class="k">Flux leaving the surface</span><span class="val" id="rOut">0.00</span>
+          <span class="k">Flux entering the surface</span><span class="val" id="rIn">0.00</span>
+          <span class="k">Net flux, <i>Φ</i><sub>B</sub></span><span class="val" id="rNet">0.00</span>
+          <hr>
+          <span class="k">Lines out / in</span><span class="val" id="rLines">0 / 0</span>
+        </div>
+        <div class="verdict"><span class="pill">ZERO</span><span id="vText">Whatever leaves, returns.</span></div>
+        <p style="font-size:12px;color:var(--muted);margin-top:8px">Flux is shown in units of the flux through the middle of one magnet.</p>
+      </div>
+      <div class="card">
+        <h3>View</h3>
+        <label class="check"><input type="checkbox" id="filings" checked> Iron filings</label>
+        <label class="check"><input type="checkbox" id="flines" checked> Field lines</label>
+      </div>
+      <div class="card">
+        <h3>Try this</h3>
+        <ol class="try">
+          <li>Drag the surface over the north end only. Lines leave, but the same amount comes back through the inside of the magnet.</li>
+          <li>Press <b>Cut the magnet in half</b>. You don't get a lone N and a lone S; you get two complete magnets.</li>
+          <li>Keep cutting. Every piece, down to a single atom, still has both poles.</li>
+          <li>Compare with Law 1: a surface around a lone charge had net flux. Here there's nothing to enclose.</li>
+        </ol>
+      </div>
+    </aside>
+  </section>
+
+  <section class="explain">
+    <div>
+      <h2>What you're measuring</h2>
+      <p>The rim shows where field crosses the surface. You will always see both colors. Lines that fan out from the north end sweep around, re-enter at the south end, and run back through the magnet to close the loop.</p>
+    </div>
+    <div>
+      <h2>Why it matters</h2>
+      <p>No one has ever found a magnetic monopole, despite dedicated searches. That's why magnetism comes from moving charge and spinning electrons. It is also why transformer cores and motor designs can treat magnetic flux like water in closed pipes: it circulates, and it never piles up.</p>
+    </div>
+    <div>
+      <h2>About this simulation</h2>
+      <p>Each magnet is modelled the way physics describes a permanent magnet: as a sheet of tiny currents along its long sides (the <b>bound surface current</b>). That makes the field divergence-free by construction, so lines close on themselves inside the magnet.</p>
+    </div>
+  </section>
+
+  <nav class="pager" aria-label="Next and previous">
+    <a href="1-gauss-electric.html"><small>← Law 1</small>Gauss's law for electricity</a>
+    <a class="next" href="3-faraday.html"><small>Next · Law 3 →</small>Faraday's law of induction</a>
+  </nav>
+</main>
+
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- theme colors ---------- */
+const C = {};
+const themeListeners = [];
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  ["bg","panel","panel-2","ink","muted","line","stage","grid","e","b","pos","neg","gold","copper","accent","spole","warn","ok"]
+    .forEach(k => C[k] = cs.getPropertyValue("--" + k).trim());
+  themeListeners.forEach(f => f());
+}
+function rgba(hex, a) {
+  let h = hex.replace("#", "");
+  if (h.length === 3) h = h.split("").map(c => c + c).join("");
+  const n = parseInt(h, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+readColors();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readColors);
+function isDark() {
+  const t = document.documentElement.dataset.theme;
+  return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+}
+document.addEventListener("DOMContentLoaded", () => {
+  const tb = $("#themeBtn");
+  const label = () => tb && (tb.textContent = isDark() ? "Light mode" : "Dark mode");
+  if (tb) { label(); tb.addEventListener("click", () => { document.documentElement.dataset.theme = isDark() ? "light" : "dark"; readColors(); label(); }); }
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", label);
+  // equation form toggle
+  $$(".form-toggle").forEach(seg => {
+    const btns = $$("button", seg);
+    btns.forEach(b => b.addEventListener("click", () => {
+      document.documentElement.classList.toggle("form-int", b.dataset.form === "int");
+      $$(".form-toggle button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.form === b.dataset.form)));
+    }));
+  });
+});
+
+/* ---------- stage: canvas with a fixed virtual coordinate system ---------- */
+class Stage {
+  constructor(canvas, VW, VH) {
+    this.c = canvas; this.ctx = canvas.getContext("2d");
+    this.VW = VW; this.VH = VH; this.s = 1; this.visible = true; this.onresize = null;
+    canvas.style.aspectRatio = `${VW} / ${VH}`;
+    new ResizeObserver(() => this.resize()).observe(canvas);
+    new IntersectionObserver(es => { this.visible = es[0].isIntersecting; }).observe(canvas);
+    this.resize();
+  }
+  resize() {
+    const r = this.c.getBoundingClientRect();
+    if (!r.width) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.c.width = Math.round(r.width * dpr);
+    this.c.height = Math.round(r.width * dpr * this.VH / this.VW);
+    this.s = this.c.width / this.VW;
+    this.onresize && this.onresize();
+  }
+  begin() {
+    const x = this.ctx;
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    x.fillStyle = C.stage; x.fillRect(0, 0, this.c.width, this.c.height);
+    x.setTransform(this.s, 0, 0, this.s, 0, 0);
+    return x;
+  }
+  toV(e) {
+    const r = this.c.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width * this.VW, y: (e.clientY - r.top) / r.height * this.VH };
+  }
+  grid(step = 40) {
+    const x = this.ctx; x.strokeStyle = C.grid; x.lineWidth = 1; x.beginPath();
+    for (let i = step; i < this.VW; i += step) { x.moveTo(i, 0); x.lineTo(i, this.VH); }
+    for (let j = step; j < this.VH; j += step) { x.moveTo(0, j); x.lineTo(this.VW, j); }
+    x.stroke();
+  }
+}
+
+/* ---------- drag helper ----------
+   getTargets() returns [{hit(p)->bool, start(p), move(p), end(), cursor}] in priority order */
+function makeDraggable(stage, getTargets, onChange) {
+  let active = null, pid = null;
+  const cv = stage.c;
+  cv.addEventListener("pointerdown", e => {
+    const p = stage.toV(e);
+    for (const t of getTargets()) {
+      if (t.hit(p)) { active = t; pid = e.pointerId; cv.setPointerCapture(pid); t.start && t.start(p); cv.style.cursor = "grabbing"; e.preventDefault(); onChange && onChange(); return; }
+    }
+  });
+  cv.addEventListener("pointermove", e => {
+    const p = stage.toV(e);
+    if (active && e.pointerId === pid) { active.move(p); onChange && onChange(); return; }
+    const t = getTargets().find(t => t.hit(p));
+    cv.style.cursor = t ? (t.cursor || "grab") : "default";
+  });
+  const end = e => { if (active && e.pointerId === pid) { active.end && active.end(); active = null; cv.style.cursor = "default"; onChange && onChange(); } };
+  cv.addEventListener("pointerup", end);
+  cv.addEventListener("pointercancel", end);
+}
+
+/* ---------- animation loop ---------- */
+function animate(fn) {
+  let last = performance.now();
+  function f(t) {
+    const dt = Math.min(0.05, (t - last) / 1000); last = t;
+    fn(dt, t / 1000);
+    requestAnimationFrame(f);
+  }
+  requestAnimationFrame(f);
+}
+
+/* ---------- drawing helpers ---------- */
+function arrow(x, x1, y1, x2, y2, h = 7) {
+  const a = Math.atan2(y2 - y1, x2 - x1);
+  x.beginPath(); x.moveTo(x1, y1); x.lineTo(x2, y2); x.stroke();
+  x.beginPath(); x.moveTo(x2, y2);
+  x.lineTo(x2 - h * Math.cos(a - 0.45), y2 - h * Math.sin(a - 0.45));
+  x.lineTo(x2 - h * Math.cos(a + 0.45), y2 - h * Math.sin(a + 0.45));
+  x.closePath(); x.fill();
+}
+function polyline(x, pts) {
+  x.beginPath(); x.moveTo(pts[0], pts[1]);
+  for (let i = 2; i < pts.length; i += 2) x.lineTo(pts[i], pts[i + 1]);
+}
+function label(x, text, px, py, { color = C.muted, size = 13, align = "left", font = "var(--f-mono)", weight = 500 } = {}) {
+  x.fillStyle = color; x.textAlign = align; x.textBaseline = "middle";
+  x.font = `${weight} ${size}px "IBM Plex Mono", ui-monospace, monospace`;
+  x.fillText(text, px, py);
+}
+
+/* Field line tracer (RK2, normalized direction). field(x,y) -> [bx,by]. sign = +1 along field, -1 against. */
+function traceLine(field, x, y, sign, { step = 4, max = 2000, stop } = {}) {
+  const pts = [x, y];
+  for (let i = 0; i < max; i++) {
+    let [bx, by] = field(x, y); let m = Math.hypot(bx, by);
+    if (m < 1e-12) break;
+    const hx = x + sign * 0.5 * step * bx / m, hy = y + sign * 0.5 * step * by / m;
+    [bx, by] = field(hx, hy); m = Math.hypot(bx, by);
+    if (m < 1e-12) break;
+    x += sign * step * bx / m; y += sign * step * by / m;
+    pts.push(x, y);
+    const s = stop && stop(x, y, i);
+    if (s) return { pts, end: s };
+  }
+  return { pts, end: null };
+}
+
+/* Count signed crossings of a polyline (oriented along the field) through a circle. */
+function countCrossings(pts, cx, cy, R) {
+  let out = 0, inn = 0;
+  let prev = Math.hypot(pts[0] - cx, pts[1] - cy) - R;
+  for (let i = 2; i < pts.length; i += 2) {
+    const d = Math.hypot(pts[i] - cx, pts[i + 1] - cy) - R;
+    if (prev < 0 && d >= 0) out++;
+    else if (prev >= 0 && d < 0) inn++;
+    prev = d;
+  }
+  return [out, inn];
+}
+
+/* ---------- strip chart ---------- */
+class Strip {
+  constructor(canvas, series, span = 6) {
+    this.c = canvas; this.x = canvas.getContext("2d"); this.series = series; this.span = span;
+    this.data = []; // {t, v:[...]}
+    this.scale = series.map(s => s.min || 1e-9);
+    new ResizeObserver(() => this.size()).observe(canvas); this.size();
+  }
+  size() { const r = this.c.getBoundingClientRect(); const d = Math.min(devicePixelRatio || 1, 2); this.c.width = r.width * d; this.c.height = r.height * d; this.d = d; }
+  push(t, v) { this.data.push({ t, v }); while (this.data.length && this.data[0].t < t - this.span) this.data.shift(); }
+  clear() { this.data = []; }
+  draw() {
+    const x = this.x, W = this.c.width / this.d, H = this.c.height / this.d;
+    x.setTransform(this.d, 0, 0, this.d, 0, 0); x.clearRect(0, 0, W, H);
+    x.strokeStyle = C.grid; x.lineWidth = 1; x.beginPath();
+    for (let i = 1; i < 6; i++) { x.moveTo(W * i / 6, 0); x.lineTo(W * i / 6, H); }
+    x.stroke();
+    x.strokeStyle = C.line; x.beginPath(); x.moveTo(0, H / 2); x.lineTo(W, H / 2); x.stroke();
+    if (this.data.length < 2) return;
+    const tEnd = this.data[this.data.length - 1].t, t0 = tEnd - this.span;
+    this.series.forEach((s, k) => {
+      let mx = s.fixed || 0;
+      if (!s.fixed) { for (const d of this.data) mx = Math.max(mx, Math.abs(d.v[k])); mx = Math.max(mx, s.min || 1e-9); this.scale[k] = lerp(this.scale[k], mx, 0.08); mx = this.scale[k]; }
+      x.strokeStyle = C[s.color] || s.color; x.lineWidth = s.width || 2; x.setLineDash(s.dash || []);
+      x.beginPath();
+      this.data.forEach((d, i) => {
+        const px = (d.t - t0) / this.span * W, py = H / 2 - d.v[k] / mx * (H / 2 - 8);
+        i ? x.lineTo(px, py) : x.moveTo(px, py);
+      });
+      x.stroke(); x.setLineDash([]);
+    });
+  }
+}
+
+function fmt(v, d = 2) { const s = v.toFixed(d); return (s === "-" + (0).toFixed(d)) ? (0).toFixed(d) : s; }
+function signed(v, d = 2) { const s = fmt(v, d); return (parseFloat(s) > 0 ? "+" : "") + s; }
+function bindRange(id, fn) {
+  const el = document.getElementById(id), out = document.querySelector(`output[for="${id}"]`);
+  const upd = () => { const r = fn(parseFloat(el.value)); if (out && r !== undefined) out.textContent = r; };
+  el.addEventListener("input", upd); upd(); return el;
+}
+function pressGroup(btns, onPick) {
+  btns.forEach(b => b.addEventListener("click", () => { btns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); onPick(b); }));
+}
+
+</script>
+<script>
+(() => {
+const VW = 1000, VH = 620;
+const st = new Stage($("#cv"), VW, VH);
+let mags = [], sel = 0, surf = {}, wires = [], lines = [], filings = [], rim = [], dirty = true, phase = 0;
+let fOut = 0, fIn = 0, lOut = 0, lIn = 0, cuts = 0, REF = 1;
+const WPS = 16, SOFT = 9;
+
+function buildWires(list) {
+  const w = [];
+  for (const m of list) {
+    const ax = Math.cos(m.ang), ay = Math.sin(m.ang), px = -ay, py = ax;
+    for (let i = 0; i < WPS; i++) {
+      const t = ((i + 0.5) / WPS - 0.5) * m.len;
+      const bx = m.x + ax * t, by = m.y + ay * t;
+      w.push([bx + px * m.wid / 2, by + py * m.wid / 2, 1 / WPS]);
+      w.push([bx - px * m.wid / 2, by - py * m.wid / 2, -1 / WPS]);
+    }
+  }
+  return w;
+}
+function fieldFrom(ws) {
+  return (x, y) => {
+    let bx = 0, by = 0;
+    for (let i = 0; i < ws.length; i++) {
+      const w = ws[i], dx = x - w[0], dy = y - w[1], k = w[2] / (dx * dx + dy * dy + SOFT);
+      bx -= dy * k; by += dx * k;
+    }
+    return [bx, by];
+  };
+}
+function crossFlux(B, m) { // flux through the centre cross-section of magnet m
+  const ax = Math.cos(m.ang), ay = Math.sin(m.ang), px = -ay, py = ax; let s = 0; const N = 60;
+  for (let i = 0; i < N; i++) { const t = ((i + 0.5) / N - 0.5) * m.wid; const [bx, by] = B(m.x + px * t, m.y + py * t); s += (bx * ax + by * ay) * m.wid / N; }
+  return s;
+}
+{ const ref = { x: 0, y: 0, ang: 0, len: 220, wid: 50 }; REF = crossFlux(fieldFrom(buildWires([ref])), ref); }
+
+function compute() {
+  wires = buildWires(mags);
+  const B = fieldFrom(wires);
+  lines = [];
+  const oob = (x, y) => x < -250 || x > VW + 250 || y < -250 || y > VH + 250;
+  mags.forEach(m => {
+    const ax = Math.cos(m.ang), ay = Math.sin(m.ang), px = -ay, py = ax, K = mags.length <= 2 ? 9 : 6;
+    for (let k = 0; k < K; k++) {
+      const t = ((k + 0.5) / K - 0.5) * m.wid * 0.9, sx = m.x + px * t, sy = m.y + py * t;
+      const f = traceLine(B, sx, sy, 1, { step: 3.5, max: 2400, stop: (x, y, i) => oob(x, y) ? "out" : (i > 30 && (x - sx) ** 2 + (y - sy) ** 2 < 16 ? "closed" : null) });
+      let pts = f.pts;
+      if (f.end !== "closed") {
+        const b = traceLine(B, sx, sy, -1, { step: 3.5, max: 2400, stop: (x, y) => oob(x, y) ? "out" : null });
+        const r = []; for (let i = b.pts.length - 2; i >= 2; i -= 2) r.push(b.pts[i], b.pts[i + 1]);
+        pts = r.concat(pts);
+      } else pts.push(sx, sy);
+      lines.push(pts);
+    }
+  });
+  // iron filings
+  filings = [];
+  for (let gx = 8; gx < VW; gx += 15) for (let gy = 8; gy < VH; gy += 15) {
+    const x = gx + ((gx * 7 + gy * 13) % 9) - 4, y = gy + ((gx * 11 + gy * 3) % 9) - 4;
+    const [bx, by] = B(x, y), m = Math.hypot(bx, by); if (m < 2e-5) continue;
+    filings.push([x, y, bx / m, by / m, clamp(Math.log10(m * 1e4) / 2.4, 0.08, 1)]);
+  }
+  // flux through surface
+  const N = 720; fOut = 0; fIn = 0; rim = [];
+  for (let i = 0; i < N; i++) {
+    const a = (i + 0.5) / N * TAU, cx = Math.cos(a), cy = Math.sin(a);
+    const [bx, by] = B(surf.x + surf.R * cx, surf.y + surf.R * cy);
+    const bn = (bx * cx + by * cy), d = bn * surf.R * TAU / N;
+    if (d > 0) fOut += d; else fIn -= d;
+    if (i % 4 === 0) rim.push(bn);
+  }
+  fOut /= REF; fIn /= REF;
+  lOut = 0; lIn = 0;
+  for (const p of lines) { const [o, n] = countCrossings(p, surf.x, surf.y, surf.R); lOut += o; lIn += n; }
+  $("#rOut").textContent = fmt(fOut); $("#rIn").textContent = fmt(fIn); $("#rNet").textContent = fmt(fOut - fIn);
+  $("#rLines").textContent = `${lOut} / ${lIn}`;
+  $("#vText").textContent = (fOut + fIn < 0.01) ? "Almost no field crosses the surface here. Move it closer to a magnet."
+    : `${fmt(fOut)} leaves and ${fmt(fIn)} comes back. The net is zero wherever you put the surface.`;
+  dirty = false;
+}
+
+function drawMagnet(x, m, i) {
+  x.save(); x.translate(m.x, m.y); x.rotate(m.ang);
+  const L = m.len, W = m.wid;
+  x.fillStyle = C.spole; x.fillRect(-L / 2, -W / 2, L / 2, W);
+  x.fillStyle = C.pos; x.fillRect(0, -W / 2, L / 2, W);
+  x.strokeStyle = i === sel ? C.accent : rgba(C.ink, 0.35); x.lineWidth = i === sel ? 3 : 1.2;
+  x.strokeRect(-L / 2, -W / 2, L, W);
+  const fs = clamp(Math.min(W * 0.5, L * 0.22), 9, 22);
+  x.fillStyle = "#fff"; x.font = `700 ${fs}px "Bricolage Grotesque", sans-serif`; x.textAlign = "center"; x.textBaseline = "middle";
+  x.save(); x.translate(L / 4, 0); x.rotate(-m.ang); x.fillText("N", 0, 1); x.restore();
+  x.save(); x.translate(-L / 4, 0); x.rotate(-m.ang); x.fillText("S", 0, 1); x.restore();
+  x.restore();
+}
+
+function draw() {
+  const x = st.begin();
+  st.grid(40);
+  x.fillStyle = rgba(C.accent, 0.06); x.beginPath(); x.arc(surf.x, surf.y, surf.R, 0, TAU); x.fill();
+  if ($("#filings").checked) {
+    x.lineWidth = 1.3; x.lineCap = "round";
+    for (const [lo, hi, al] of [[0, 0.33, 0.28], [0.33, 0.66, 0.5], [0.66, 1.01, 0.78]]) {
+      x.strokeStyle = rgba(C.muted, al); x.beginPath();
+      for (const f of filings) { if (f[4] <= lo || f[4] > hi) continue; x.moveTo(f[0] - f[2] * 4, f[1] - f[3] * 4); x.lineTo(f[0] + f[2] * 4, f[1] + f[3] * 4); }
+      x.stroke();
+    }
+  }
+  if ($("#flines").checked) {
+    x.lineWidth = 1.5; x.strokeStyle = rgba(C.b, 0.4);
+    for (const p of lines) { polyline(x, p); x.stroke(); }
+    x.lineWidth = 2.2; x.strokeStyle = C.b; x.setLineDash([5, 16]); x.lineDashOffset = -phase;
+    for (const p of lines) { polyline(x, p); x.stroke(); }
+    x.setLineDash([]);
+  }
+  mags.forEach((m, i) => drawMagnet(x, m, i));
+  // lines over magnets, faint, to show the return path inside
+  if ($("#flines").checked) {
+    x.save(); x.beginPath(); mags.forEach(m => { x.save(); x.translate(m.x, m.y); x.rotate(m.ang); x.rect(-m.len / 2, -m.wid / 2, m.len, m.wid); x.restore(); }); x.clip();
+    x.lineWidth = 1.6; x.strokeStyle = "rgba(255,255,255,.75)"; x.setLineDash([5, 16]); x.lineDashOffset = -phase;
+    for (const p of lines) { polyline(x, p); x.stroke(); }
+    x.setLineDash([]); x.restore();
+  }
+  // rim
+  const n = rim.length, mx = Math.max(1e-9, ...rim.map(Math.abs));
+  x.lineWidth = 5;
+  for (let i = 0; i < n; i++) {
+    const v = rim[i], a = 0.12 + 0.88 * Math.sqrt(Math.abs(v) / mx);
+    x.strokeStyle = rgba(v >= 0 ? C.pos : C.neg, a);
+    x.beginPath(); x.arc(surf.x, surf.y, surf.R, i / n * TAU, (i + 1) / n * TAU + 0.005); x.stroke();
+  }
+  x.lineWidth = 1; x.strokeStyle = rgba(C.ink, 0.4); x.setLineDash([4, 5]);
+  x.beginPath(); x.arc(surf.x, surf.y, surf.R + 7, 0, TAU); x.stroke(); x.setLineDash([]);
+  label(x, "closed surface S", surf.x, surf.y - surf.R - 20, { align: "center", size: 12 });
+  x.fillStyle = C.accent; x.strokeStyle = C.stage; x.lineWidth = 2;
+  x.beginPath(); x.arc(surf.x + surf.R, surf.y, 8, 0, TAU); x.fill(); x.stroke();
+  if (cuts) label(x, `cuts made: ${cuts} · magnets: ${mags.length} · north poles: ${mags.length} · south poles: ${mags.length}`, 16, 22, { size: 12 });
+}
+
+function inMag(p, m) {
+  const dx = p.x - m.x, dy = p.y - m.y, ax = Math.cos(m.ang), ay = Math.sin(m.ang);
+  return Math.abs(dx * ax + dy * ay) < m.len / 2 + 5 && Math.abs(-dx * ay + dy * ax) < m.wid / 2 + 5;
+}
+let off = null;
+makeDraggable(st, () => [
+  { hit: p => Math.hypot(p.x - surf.x - surf.R, p.y - surf.y) < 14, cursor: "ew-resize",
+    move: p => { surf.R = clamp(Math.hypot(p.x - surf.x, p.y - surf.y), 30, 320); dirty = true; } },
+  ...mags.map((m, i) => ({ hit: p => inMag(p, m), start: p => { sel = i; off = [m.x - p.x, m.y - p.y]; },
+    move: p => { m.x = clamp(p.x + off[0], 20, VW - 20); m.y = clamp(p.y + off[1], 20, VH - 20); dirty = true; } })),
+  { hit: p => Math.hypot(p.x - surf.x, p.y - surf.y) < surf.R, cursor: "move", start: p => off = [surf.x - p.x, surf.y - p.y],
+    move: p => { surf.x = clamp(p.x + off[0], 0, VW); surf.y = clamp(p.y + off[1], 0, VH); dirty = true; } }
+]);
+
+function reset() { mags = [{ x: 420, y: 310, ang: 0, len: 230, wid: 52 }]; sel = 0; surf = { x: 540, y: 310, R: 95 }; cuts = 0; dirty = true; $("#cut").disabled = false; }
+$("#reset").onclick = reset;
+$("#rotate").onclick = () => { const m = mags[sel]; if (m) { m.ang += Math.PI / 4; dirty = true; } };
+$("#flip").onclick = () => { const m = mags[sel]; if (m) { m.ang += Math.PI; dirty = true; } };
+$("#add").onclick = () => { if (mags.length >= 5) return; mags.push({ x: 780, y: 470, ang: -Math.PI / 2, len: 160, wid: 40 }); sel = mags.length - 1; dirty = true; };
+$("#cut").onclick = () => {
+  const m = mags[sel]; if (!m) return;
+  if (m.len < 50 || mags.length >= 6) { $("#vText").textContent = "Pieces are too small to cut further on this bench, but in real magnets every piece keeps both poles."; return; }
+  const ax = Math.cos(m.ang), ay = Math.sin(m.ang), h = m.len / 2, gap = 34;
+  const a = { ...m, len: h, x: m.x - ax * (h / 2 + gap / 2), y: m.y - ay * (h / 2 + gap / 2) };
+  const b = { ...m, len: h, x: m.x + ax * (h / 2 + gap / 2), y: m.y + ay * (h / 2 + gap / 2) };
+  mags.splice(sel, 1, a, b); sel += 1; cuts++; dirty = true;
+};
+["filings", "flines"].forEach(id => $("#" + id).onchange = () => {});
+
+reset();
+animate(dt => {
+  if (!st.visible) return;
+  if (dirty) compute();
+  if (!reduceMotion) phase += dt * 26;
+  draw();
+});
+})();
+
+</script>
+</body>
+</html>

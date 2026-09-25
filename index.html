@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Maxwell Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=STIX+Two+Text:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#EDF1F4; --panel:#FFFFFF; --panel-2:#F5F7F9; --ink:#15202B; --muted:#5A6774; --line:#D3DAE1;
+  --stage:#F9FBFC; --grid:#E3E9EE;
+  --e:#E0580C; --b:#1868C9; --pos:#D0312D; --neg:#3552C9; --gold:#C79400; --copper:#B26A34;
+  --accent:#0A7C74; --accent-ink:#FFFFFF; --spole:#8795A3; --warn:#B7410E; --ok:#1F8A4C;
+  --f-display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --f-math:"STIX Two Text", "Cambria Math", "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#0D131A; --panel:#141D27; --panel-2:#101820; --ink:#E4EBF2; --muted:#93A2B1; --line:#24313F;
+    --stage:#0A1016; --grid:#151F29;
+    --e:#FF8B3D; --b:#4CA2FF; --pos:#FF5B50; --neg:#7D95FF; --gold:#F2C84B; --copper:#D98D52;
+    --accent:#3CC4BA; --accent-ink:#061312; --spole:#6E7D8C; --warn:#FF8A5B; --ok:#4CCB84;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0D131A; --panel:#141D27; --panel-2:#101820; --ink:#E4EBF2; --muted:#93A2B1; --line:#24313F;
+  --stage:#0A1016; --grid:#151F29;
+  --e:#FF8B3D; --b:#4CA2FF; --pos:#FF5B50; --neg:#7D95FF; --gold:#F2C84B; --copper:#D98D52;
+  --accent:#3CC4BA; --accent-ink:#061312; --spole:#6E7D8C; --warn:#FF8A5B; --ok:#4CCB84;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg); color:var(--ink); font:15px/1.6 var(--f-body); -webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* ---------- nav ---------- */
+.nav{position:sticky; top:0; z-index:10; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+.nav-in{max-width:1240px; margin:0 auto; padding:10px 20px; display:flex; align-items:center; gap:18px; flex-wrap:wrap}
+.brand{font:700 17px/1 var(--f-display); letter-spacing:-.01em; color:var(--ink); text-decoration:none; display:flex; align-items:center; gap:8px}
+.brand svg{width:22px;height:22px}
+.nav-links{display:flex; gap:4px; flex-wrap:wrap; flex:1}
+.nav-links a{font-size:13px; color:var(--muted); text-decoration:none; padding:6px 10px; border-radius:6px; white-space:nowrap}
+.nav-links a:hover{color:var(--ink); background:var(--panel)}
+.nav-links a[aria-current="page"]{color:var(--ink); background:var(--panel); box-shadow:inset 0 0 0 1px var(--line)}
+.nav-links a .n{font-family:var(--f-mono); font-size:11px; margin-right:5px; color:var(--accent)}
+@media (max-width:700px){ .nav-in{gap:8px 12px; padding:8px 16px} .brand{flex:1} .nav-links{order:3; flex:1 1 100%; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none} .wrap{padding-inline:16px} }
+.theme-btn{border:1px solid var(--line); background:var(--panel); border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer; color:var(--muted)}
+
+/* ---------- page ---------- */
+.wrap{max-width:1240px; margin:0 auto; padding-inline:20px; padding-block:28px 64px}
+.eyebrow{font:600 12px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--accent)}
+h1,h2,h3{font-family:var(--f-display); text-wrap:balance; letter-spacing:-.015em; margin:0}
+h1{font-size:clamp(28px,4.2vw,44px); line-height:1.08; font-weight:700}
+h2{font-size:22px; line-height:1.2; font-weight:650}
+h3{font-size:16px; font-weight:650}
+p{margin:0}
+.lede{color:var(--muted); font-size:17px; max-width:62ch}
+
+.lab-head{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:28px; align-items:end; margin-bottom:22px}
+.lab-head .t{display:flex; flex-direction:column; gap:12px}
+@media (max-width:860px){ .lab-head{grid-template-columns:1fr; gap:18px} }
+
+/* ---------- equations ---------- */
+.eqbox{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px 14px; display:flex; flex-direction:column; gap:10px}
+.eqbox-top{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap}
+.eq{font-family:var(--f-math); font-size:clamp(22px,3vw,30px); line-height:1.3; white-space:nowrap; overflow-x:auto; padding-block:4px}
+.eq .v{font-weight:700; font-style:normal}
+.eq i{font-style:italic}
+.eq sub{font-size:.55em}
+.frac{display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; font-size:.82em; line-height:1.15; margin-inline:.12em}
+.frac>span:first-child{border-bottom:1px solid currentColor; padding-inline:.15em}
+.eq .df, .eq .if{display:none}
+html:not(.form-int) .eq .df{display:inline}
+html.form-int .eq .if{display:inline}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; padding:2px; background:var(--panel-2)}
+.seg button{border:0; background:transparent; padding:5px 10px; border-radius:6px; font-size:12px; cursor:pointer; color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--panel); color:var(--ink); box-shadow:0 0 0 1px var(--line)}
+.eq-key{font-size:13px; color:var(--muted); display:flex; flex-wrap:wrap; gap:4px 14px}
+.eq-key b{font-family:var(--f-math); font-size:15px; color:var(--ink); font-weight:700}
+.eq-key i{font-family:var(--f-math); font-size:15px; color:var(--ink)}
+
+/* ---------- bench ---------- */
+.bench{display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:16px; align-items:start}
+@media (max-width:960px){ .bench{grid-template-columns:1fr} }
+.stage-col{display:flex; flex-direction:column; gap:10px; min-width:0}
+.toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.btn{border:1px solid var(--line); background:var(--panel); padding:7px 12px; border-radius:8px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; line-height:1.1}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.btn .dot{width:10px;height:10px;border-radius:50%}
+.btn[aria-pressed="true"]{box-shadow:inset 0 0 0 1.5px var(--accent); color:var(--accent)}
+.toolbar .sep{width:1px; align-self:stretch; background:var(--line); margin-inline:2px}
+.canvas-frame{position:relative; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--stage)}
+.canvas-frame canvas{display:block; width:100%; touch-action:none; user-select:none; -webkit-user-select:none}
+.hint{position:absolute; left:12px; bottom:10px; font-size:12px; color:var(--muted); background:color-mix(in srgb, var(--stage) 80%, transparent); padding:3px 8px; border-radius:6px; pointer-events:none}
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted)}
+.legend > span{display:inline-flex; align-items:center; gap:6px}
+.legend .sw{width:18px; height:3px; border-radius:2px}
+.legend .sw.dash{background:none!important; border-top:2px dashed; height:0}
+.strip-frame{border:1px solid var(--line); border-radius:10px; background:var(--stage); padding:8px 10px 6px}
+.strip-frame canvas{display:block; width:100%; height:120px}
+
+.side{display:flex; flex-direction:column; gap:14px}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px}
+.card h3{margin-bottom:10px; font-size:13px; font-family:var(--f-mono); font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.meter{display:grid; grid-template-columns:1fr auto; gap:6px 12px; align-items:baseline}
+.meter .k{font-size:13px; color:var(--muted)}
+.meter .k i, .meter .k b{font-family:var(--f-math); font-size:15px; color:var(--ink)}
+.meter .val{font:600 18px/1.2 var(--f-mono); font-variant-numeric:tabular-nums; text-align:right}
+.meter .val small{font-size:12px; color:var(--muted); font-weight:400; margin-left:3px}
+.meter hr{grid-column:1/-1; border:0; border-top:1px dashed var(--line); margin:4px 0; width:100%}
+.verdict{margin-top:10px; font-size:13px; padding:8px 10px; border-radius:8px; background:var(--panel-2); border:1px solid var(--line); display:flex; gap:8px; align-items:flex-start}
+.verdict .pill{font:600 11px/1 var(--f-mono); padding:4px 6px; border-radius:4px; background:var(--ok); color:var(--panel); white-space:nowrap; letter-spacing:.04em}
+.verdict.bad .pill{background:var(--warn)}
+.ctrl{display:flex; flex-direction:column; gap:4px; margin-bottom:12px}
+.ctrl:last-child{margin-bottom:0}
+.ctrl label{display:flex; align-items:baseline; gap:.3em; font-size:13px; color:var(--muted)}
+.ctrl label output{margin-left:auto}
+.ctrl label output{font-family:var(--f-mono); color:var(--ink); font-variant-numeric:tabular-nums}
+input[type=range]{width:100%; accent-color:var(--accent)}
+.check{display:flex; gap:8px; align-items:center; font-size:13px; cursor:pointer; margin-top:4px}
+.check input{accent-color:var(--accent); width:16px; height:16px}
+.try{margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:10px; counter-reset:t}
+.try li{font-size:13.5px; line-height:1.5; position:relative; padding-left:30px; counter-increment:t}
+.try li::before{content:counter(t); position:absolute; left:0; top:1px; font:600 11px/18px var(--f-mono); width:20px; height:20px; text-align:center; border-radius:50%; border:1px solid var(--line); color:var(--accent); box-sizing:border-box}
+
+.explain{margin-top:40px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:28px; border-top:1px solid var(--line); padding-top:28px}
+.explain > div{display:flex; flex-direction:column; gap:8px}
+.explain p{color:var(--muted); font-size:14.5px; max-width:60ch}
+.explain p b{color:var(--ink); font-weight:600}
+@media (max-width:860px){ .explain{grid-template-columns:1fr; gap:22px} }
+.pager{margin-top:40px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap}
+.pager a{display:flex; flex-direction:column; gap:2px; padding:12px 16px; border:1px solid var(--line); border-radius:10px; background:var(--panel); text-decoration:none; color:var(--ink); min-width:200px}
+.pager a small{color:var(--muted); font-size:12px}
+.pager a.next{text-align:right; margin-left:auto}
+.m{font-family:var(--f-math); font-size:1.08em}
+.m b{font-weight:700}
+@media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto!important} }
+
+</style>
+</head>
+<body>
+<header class="nav"><div class="nav-in"><a class="brand" href="index.html"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12c2.5-7 5-7 7.5 0s5 7 7.5 0 3.5-5 5-3" stroke="var(--e)" stroke-width="2" stroke-linecap="round"/><path d="M2 12c2.5 5 5 5 7.5 0s5-5 7.5 0 3.5 4 5 2" stroke="var(--b)" stroke-width="2" stroke-linecap="round" opacity=".8"/></svg>Maxwell Lab</a><nav class="nav-links" aria-label="Benches"><a href="index.html" aria-current="page">Overview</a><a href="1-gauss-electric.html"><span class="n">1</span>Gauss · E</a><a href="2-gauss-magnetic.html"><span class="n">2</span>Gauss · B</a><a href="3-faraday.html"><span class="n">3</span>Faraday</a><a href="4-ampere-maxwell.html"><span class="n">4</span>Ampère–Maxwell</a><a href="5-light.html"><span class="n">5</span>Light</a></nav><button class="theme-btn" id="themeBtn" type="button">Dark mode</button></div></header>
+<style>
+.hero{position:relative; border:1px solid var(--line); border-radius:16px; overflow:hidden; background:var(--stage); margin-bottom:28px}
+.hero canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
+.hero-in{position:relative; padding:44px 36px 40px; display:flex; flex-direction:column; gap:14px; max-width:720px}
+@media (min-width:1000px){ .hero-in{max-width:58%} }
+.hero h1{font-size:clamp(34px,5.6vw,62px); line-height:1.02}
+.hero .lede{font-size:18px; color:var(--muted)}
+.hero .cta{display:flex; gap:10px; flex-wrap:wrap; margin-top:6px}
+.hero .cta a{text-decoration:none}
+@media (max-width:600px){ .hero-in{padding:28px 20px} }
+.laws-top{display:flex; justify-content:space-between; align-items:end; gap:12px; flex-wrap:wrap; margin-bottom:14px}
+.laws{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px}
+@media (max-width:820px){ .laws{grid-template-columns:1fr} }
+.law{display:flex; flex-direction:column; gap:10px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 20px; text-decoration:none; color:var(--ink); transition:border-color .15s, transform .15s}
+.law:hover{border-color:var(--accent); transform:translateY(-2px)}
+.law .row{display:flex; justify-content:space-between; align-items:baseline; gap:10px}
+.law .num{font:600 12px/1 var(--f-mono); color:var(--accent); letter-spacing:.06em}
+.law .eq{font-size:clamp(22px,2.6vw,28px)}
+.law p{color:var(--muted); font-size:14.5px}
+.law .go{font-size:13px; color:var(--accent); font-weight:500}
+.law .tag{display:inline-flex; gap:6px; flex-wrap:wrap}
+.law .tag span{font-size:11.5px; padding:3px 8px; border-radius:999px; background:var(--panel-2); border:1px solid var(--line); color:var(--muted)}
+.law.wide{grid-column:1/-1; flex-direction:row; align-items:center; gap:24px; flex-wrap:wrap}
+.law.wide > div{flex:1 1 320px; display:flex; flex-direction:column; gap:8px}
+.keytable{margin-top:36px; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr); gap:28px; border-top:1px solid var(--line); padding-top:28px}
+@media (max-width:820px){ .keytable{grid-template-columns:1fr} }
+.keytable table{width:100%; border-collapse:collapse; font-size:14px}
+.keytable td{padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top}
+.keytable td:first-child{font-family:var(--f-math); font-size:18px; width:70px}
+.keytable td:last-child{font-family:var(--f-mono); font-size:12.5px; color:var(--muted); text-align:right; white-space:nowrap}
+.keytable p{color:var(--muted); max-width:58ch; font-size:14.5px}
+.keytable .col{display:flex; flex-direction:column; gap:10px}
+.eqops{font-size:14px; color:var(--muted); display:grid; grid-template-columns:auto 1fr; gap:6px 14px; align-items:baseline}
+.eqops b{font-family:var(--f-math); font-size:20px; color:var(--ink); font-weight:400}
+</style>
+<main class="wrap">
+  <section class="hero">
+    <canvas id="heroCv" aria-hidden="true"></canvas>
+    <div class="hero-in">
+      <span class="eyebrow">Interactive physics lab · Electromagnetism</span>
+      <h1>Four equations. Five lab benches.</h1>
+      <p class="lede">James Clerk Maxwell summed up all of electricity, magnetism and light in four equations. Each bench below lets you run the experiment behind one of them: move charges, cut magnets, push magnets through coils and watch compasses swing.</p>
+      <div class="cta">
+        <a class="btn primary" href="1-gauss-electric.html">Start with Law 1 →</a>
+        <a class="btn" href="5-light.html">Jump to light waves</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="laws-top">
+    <h2>The four laws</h2>
+    <div class="seg form-toggle" role="group" aria-label="Equation form">
+      <button type="button" data-form="diff" aria-pressed="true">Differential form</button>
+      <button type="button" data-form="int" aria-pressed="false">Integral form</button>
+    </div>
+  </div>
+  <section class="laws">
+    <a class="law" href="1-gauss-electric.html">
+      <div class="row"><span class="num">LAW 1 · GAUSS</span><span class="go">Open bench →</span></div>
+      <div class="eq">
+        <span class="df">∇ · <span class="v">E</span> = <span class="frac"><span><i>ρ</i></span><span><i>ε</i><sub>0</sub></span></span></span>
+        <span class="if">∯ <span class="v">E</span> · d<span class="v">A</span> = <span class="frac"><span><i>Q</i><sub>enc</sub></span><span><i>ε</i><sub>0</sub></span></span></span>
+      </div>
+      <p>Electric field spreads out from charge. The flux through any closed surface equals the charge inside.</p>
+      <div class="tag"><span>drag point charges</span><span>Gaussian surface</span><span>live flux meter</span></div>
+    </a>
+    <a class="law" href="2-gauss-magnetic.html">
+      <div class="row"><span class="num">LAW 2 · GAUSS FOR MAGNETISM</span><span class="go">Open bench →</span></div>
+      <div class="eq">
+        <span class="df">∇ · <span class="v">B</span> = 0</span>
+        <span class="if">∯ <span class="v">B</span> · d<span class="v">A</span> = 0</span>
+      </div>
+      <p>There are no magnetic charges. Every magnetic field line closes on itself, so net flux out of a closed surface is zero.</p>
+      <div class="tag"><span>bar magnets</span><span>iron filings</span><span>cut a magnet in half</span></div>
+    </a>
+    <a class="law" href="3-faraday.html">
+      <div class="row"><span class="num">LAW 3 · FARADAY</span><span class="go">Open bench →</span></div>
+      <div class="eq">
+        <span class="df">∇ × <span class="v">E</span> = −<span class="frac"><span>∂<span class="v">B</span></span><span>∂<i>t</i></span></span></span>
+        <span class="if">∮ <span class="v">E</span> · d<span class="v">l</span> = −<span class="frac"><span>d<i>Φ</i><sub>B</sub></span><span>d<i>t</i></span></span></span>
+      </div>
+      <p>A changing magnetic field creates a circulating electric field. That's how generators, transformers and wireless chargers work.</p>
+      <div class="tag"><span>magnet through a coil</span><span>galvanometer</span><span>AC generator</span></div>
+    </a>
+    <a class="law" href="4-ampere-maxwell.html">
+      <div class="row"><span class="num">LAW 4 · AMPÈRE–MAXWELL</span><span class="go">Open bench →</span></div>
+      <div class="eq">
+        <span class="df">∇ × <span class="v">B</span> = <i>μ</i><sub>0</sub><span class="v">J</span> + <i>μ</i><sub>0</sub><i>ε</i><sub>0</sub><span class="frac"><span>∂<span class="v">E</span></span><span>∂<i>t</i></span></span></span>
+        <span class="if">∮ <span class="v">B</span> · d<span class="v">l</span> = <i>μ</i><sub>0</sub><i>I</i><sub>enc</sub> + <i>μ</i><sub>0</sub><i>ε</i><sub>0</sub><span class="frac"><span>d<i>Φ</i><sub>E</sub></span><span>d<i>t</i></span></span></span>
+      </div>
+      <p>Currents and changing electric fields create circulating magnetic fields. Maxwell's extra term is the one that predicts light.</p>
+      <div class="tag"><span>compass grid</span><span>Ampèrian loop</span><span>charging capacitor</span></div>
+    </a>
+    <a class="law wide" href="5-light.html">
+      <div>
+        <div class="row"><span class="num">BENCH 5 · ALL FOUR TOGETHER</span></div>
+        <h3 style="font-size:22px">Light is an electromagnetic wave</h3>
+        <p>Combine Laws 3 and 4 in empty space and you get a wave moving at 1/√(<i>μ</i><sub>0</sub><i>ε</i><sub>0</sub>) = 299,792,458 m/s. Explore it in 3D from radio to gamma rays.</p>
+      </div>
+      <span class="go">Open bench →</span>
+    </a>
+  </section>
+
+  <section class="keytable">
+    <div class="col">
+      <h2>Reading the symbols</h2>
+      <p>The differential form describes what happens at a single point. The integral form describes a whole surface or loop, which is what you measure on each bench. They say the same thing.</p>
+      <div class="eqops">
+        <b>∇ ·</b><span>Divergence: how much a field spreads out from a point (a source or sink).</span>
+        <b>∇ ×</b><span>Curl: how much a field swirls around a point.</span>
+        <b>∯</b><span>Integral over a closed surface: total flux out.</span>
+        <b>∮</b><span>Integral around a closed loop: total circulation.</span>
+      </div>
+    </div>
+    <div class="col">
+      <table>
+        <tr><td><b>E</b></td><td>Electric field</td><td>V/m</td></tr>
+        <tr><td><b>B</b></td><td>Magnetic field</td><td>T (tesla)</td></tr>
+        <tr><td><i>ρ</i>, <i>Q</i></td><td>Charge density, charge</td><td>C/m³, C</td></tr>
+        <tr><td><b>J</b>, <i>I</i></td><td>Current density, current</td><td>A/m², A</td></tr>
+        <tr><td><i>Φ</i></td><td>Flux through a surface</td><td>Wb or V·m</td></tr>
+        <tr><td><i>ε</i><sub>0</sub></td><td>Permittivity of free space</td><td>8.854 × 10⁻¹² F/m</td></tr>
+        <tr><td><i>μ</i><sub>0</sub></td><td>Permeability of free space</td><td>1.2566 × 10⁻⁶ N/A²</td></tr>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- theme colors ---------- */
+const C = {};
+const themeListeners = [];
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  ["bg","panel","panel-2","ink","muted","line","stage","grid","e","b","pos","neg","gold","copper","accent","spole","warn","ok"]
+    .forEach(k => C[k] = cs.getPropertyValue("--" + k).trim());
+  themeListeners.forEach(f => f());
+}
+function rgba(hex, a) {
+  let h = hex.replace("#", "");
+  if (h.length === 3) h = h.split("").map(c => c + c).join("");
+  const n = parseInt(h, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+readColors();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readColors);
+function isDark() {
+  const t = document.documentElement.dataset.theme;
+  return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+}
+document.addEventListener("DOMContentLoaded", () => {
+  const tb = $("#themeBtn");
+  const label = () => tb && (tb.textContent = isDark() ? "Light mode" : "Dark mode");
+  if (tb) { label(); tb.addEventListener("click", () => { document.documentElement.dataset.theme = isDark() ? "light" : "dark"; readColors(); label(); }); }
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", label);
+  // equation form toggle
+  $$(".form-toggle").forEach(seg => {
+    const btns = $$("button", seg);
+    btns.forEach(b => b.addEventListener("click", () => {
+      document.documentElement.classList.toggle("form-int", b.dataset.form === "int");
+      $$(".form-toggle button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.form === b.dataset.form)));
+    }));
+  });
+});
+
+/* ---------- stage: canvas with a fixed virtual coordinate system ---------- */
+class Stage {
+  constructor(canvas, VW, VH) {
+    this.c = canvas; this.ctx = canvas.getContext("2d");
+    this.VW = VW; this.VH = VH; this.s = 1; this.visible = true; this.onresize = null;
+    canvas.style.aspectRatio = `${VW} / ${VH}`;
+    new ResizeObserver(() => this.resize()).observe(canvas);
+    new IntersectionObserver(es => { this.visible = es[0].isIntersecting; }).observe(canvas);
+    this.resize();
+  }
+  resize() {
+    const r = this.c.getBoundingClientRect();
+    if (!r.width) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.c.width = Math.round(r.width * dpr);
+    this.c.height = Math.round(r.width * dpr * this.VH / this.VW);
+    this.s = this.c.width / this.VW;
+    this.onresize && this.onresize();
+  }
+  begin() {
+    const x = this.ctx;
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    x.fillStyle = C.stage; x.fillRect(0, 0, this.c.width, this.c.height);
+    x.setTransform(this.s, 0, 0, this.s, 0, 0);
+    return x;
+  }
+  toV(e) {
+    const r = this.c.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width * this.VW, y: (e.clientY - r.top) / r.height * this.VH };
+  }
+  grid(step = 40) {
+    const x = this.ctx; x.strokeStyle = C.grid; x.lineWidth = 1; x.beginPath();
+    for (let i = step; i < this.VW; i += step) { x.moveTo(i, 0); x.lineTo(i, this.VH); }
+    for (let j = step; j < this.VH; j += step) { x.moveTo(0, j); x.lineTo(this.VW, j); }
+    x.stroke();
+  }
+}
+
+/* ---------- drag helper ----------
+   getTargets() returns [{hit(p)->bool, start(p), move(p), end(), cursor}] in priority order */
+function makeDraggable(stage, getTargets, onChange) {
+  let active = null, pid = null;
+  const cv = stage.c;
+  cv.addEventListener("pointerdown", e => {
+    const p = stage.toV(e);
+    for (const t of getTargets()) {
+      if (t.hit(p)) { active = t; pid = e.pointerId; cv.setPointerCapture(pid); t.start && t.start(p); cv.style.cursor = "grabbing"; e.preventDefault(); onChange && onChange(); return; }
+    }
+  });
+  cv.addEventListener("pointermove", e => {
+    const p = stage.toV(e);
+    if (active && e.pointerId === pid) { active.move(p); onChange && onChange(); return; }
+    const t = getTargets().find(t => t.hit(p));
+    cv.style.cursor = t ? (t.cursor || "grab") : "default";
+  });
+  const end = e => { if (active && e.pointerId === pid) { active.end && active.end(); active = null; cv.style.cursor = "default"; onChange && onChange(); } };
+  cv.addEventListener("pointerup", end);
+  cv.addEventListener("pointercancel", end);
+}
+
+/* ---------- animation loop ---------- */
+function animate(fn) {
+  let last = performance.now();
+  function f(t) {
+    const dt = Math.min(0.05, (t - last) / 1000); last = t;
+    fn(dt, t / 1000);
+    requestAnimationFrame(f);
+  }
+  requestAnimationFrame(f);
+}
+
+/* ---------- drawing helpers ---------- */
+function arrow(x, x1, y1, x2, y2, h = 7) {
+  const a = Math.atan2(y2 - y1, x2 - x1);
+  x.beginPath(); x.moveTo(x1, y1); x.lineTo(x2, y2); x.stroke();
+  x.beginPath(); x.moveTo(x2, y2);
+  x.lineTo(x2 - h * Math.cos(a - 0.45), y2 - h * Math.sin(a - 0.45));
+  x.lineTo(x2 - h * Math.cos(a + 0.45), y2 - h * Math.sin(a + 0.45));
+  x.closePath(); x.fill();
+}
+function polyline(x, pts) {
+  x.beginPath(); x.moveTo(pts[0], pts[1]);
+  for (let i = 2; i < pts.length; i += 2) x.lineTo(pts[i], pts[i + 1]);
+}
+function label(x, text, px, py, { color = C.muted, size = 13, align = "left", font = "var(--f-mono)", weight = 500 } = {}) {
+  x.fillStyle = color; x.textAlign = align; x.textBaseline = "middle";
+  x.font = `${weight} ${size}px "IBM Plex Mono", ui-monospace, monospace`;
+  x.fillText(text, px, py);
+}
+
+/* Field line tracer (RK2, normalized direction). field(x,y) -> [bx,by]. sign = +1 along field, -1 against. */
+function traceLine(field, x, y, sign, { step = 4, max = 2000, stop } = {}) {
+  const pts = [x, y];
+  for (let i = 0; i < max; i++) {
+    let [bx, by] = field(x, y); let m = Math.hypot(bx, by);
+    if (m < 1e-12) break;
+    const hx = x + sign * 0.5 * step * bx / m, hy = y + sign * 0.5 * step * by / m;
+    [bx, by] = field(hx, hy); m = Math.hypot(bx, by);
+    if (m < 1e-12) break;
+    x += sign * step * bx / m; y += sign * step * by / m;
+    pts.push(x, y);
+    const s = stop && stop(x, y, i);
+    if (s) return { pts, end: s };
+  }
+  return { pts, end: null };
+}
+
+/* Count signed crossings of a polyline (oriented along the field) through a circle. */
+function countCrossings(pts, cx, cy, R) {
+  let out = 0, inn = 0;
+  let prev = Math.hypot(pts[0] - cx, pts[1] - cy) - R;
+  for (let i = 2; i < pts.length; i += 2) {
+    const d = Math.hypot(pts[i] - cx, pts[i + 1] - cy) - R;
+    if (prev < 0 && d >= 0) out++;
+    else if (prev >= 0 && d < 0) inn++;
+    prev = d;
+  }
+  return [out, inn];
+}
+
+/* ---------- strip chart ---------- */
+class Strip {
+  constructor(canvas, series, span = 6) {
+    this.c = canvas; this.x = canvas.getContext("2d"); this.series = series; this.span = span;
+    this.data = []; // {t, v:[...]}
+    this.scale = series.map(s => s.min || 1e-9);
+    new ResizeObserver(() => this.size()).observe(canvas); this.size();
+  }
+  size() { const r = this.c.getBoundingClientRect(); const d = Math.min(devicePixelRatio || 1, 2); this.c.width = r.width * d; this.c.height = r.height * d; this.d = d; }
+  push(t, v) { this.data.push({ t, v }); while (this.data.length && this.data[0].t < t - this.span) this.data.shift(); }
+  clear() { this.data = []; }
+  draw() {
+    const x = this.x, W = this.c.width / this.d, H = this.c.height / this.d;
+    x.setTransform(this.d, 0, 0, this.d, 0, 0); x.clearRect(0, 0, W, H);
+    x.strokeStyle = C.grid; x.lineWidth = 1; x.beginPath();
+    for (let i = 1; i < 6; i++) { x.moveTo(W * i / 6, 0); x.lineTo(W * i / 6, H); }
+    x.stroke();
+    x.strokeStyle = C.line; x.beginPath(); x.moveTo(0, H / 2); x.lineTo(W, H / 2); x.stroke();
+    if (this.data.length < 2) return;
+    const tEnd = this.data[this.data.length - 1].t, t0 = tEnd - this.span;
+    this.series.forEach((s, k) => {
+      let mx = s.fixed || 0;
+      if (!s.fixed) { for (const d of this.data) mx = Math.max(mx, Math.abs(d.v[k])); mx = Math.max(mx, s.min || 1e-9); this.scale[k] = lerp(this.scale[k], mx, 0.08); mx = this.scale[k]; }
+      x.strokeStyle = C[s.color] || s.color; x.lineWidth = s.width || 2; x.setLineDash(s.dash || []);
+      x.beginPath();
+      this.data.forEach((d, i) => {
+        const px = (d.t - t0) / this.span * W, py = H / 2 - d.v[k] / mx * (H / 2 - 8);
+        i ? x.lineTo(px, py) : x.moveTo(px, py);
+      });
+      x.stroke(); x.setLineDash([]);
+    });
+  }
+}
+
+function fmt(v, d = 2) { const s = v.toFixed(d); return (s === "-" + (0).toFixed(d)) ? (0).toFixed(d) : s; }
+function signed(v, d = 2) { const s = fmt(v, d); return (parseFloat(s) > 0 ? "+" : "") + s; }
+function bindRange(id, fn) {
+  const el = document.getElementById(id), out = document.querySelector(`output[for="${id}"]`);
+  const upd = () => { const r = fn(parseFloat(el.value)); if (out && r !== undefined) out.textContent = r; };
+  el.addEventListener("input", upd); upd(); return el;
+}
+function pressGroup(btns, onPick) {
+  btns.forEach(b => b.addEventListener("click", () => { btns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); onPick(b); }));
+}
+
+</script>
+<script>
+(() => {
+const cv = $("#heroCv"), x = cv.getContext("2d");
+let W = 0, H = 0, d = 1, ph = 0;
+function size() { const r = cv.getBoundingClientRect(); d = Math.min(devicePixelRatio || 1, 2); W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; }
+new ResizeObserver(size).observe(cv); size();
+function draw() {
+  x.setTransform(d, 0, 0, d, 0, 0); x.clearRect(0, 0, W, H);
+  const narrow = W < 940, x0 = narrow ? 0 : W * 0.6, cy = narrow ? H * 0.82 : H * 0.55, A = narrow ? 26 : Math.min(90, H * 0.22);
+  const lam = narrow ? 180 : 240, k = TAU / lam, fade = xx => clamp((xx - x0) / 120, 0, 1) * (narrow ? 0.5 : 1);
+  // axis
+  x.strokeStyle = rgba(C.ink, 0.12); x.lineWidth = 1; x.beginPath(); x.moveTo(x0, cy); x.lineTo(W, cy); x.stroke();
+  // B (drawn slanted to suggest depth) then E
+  for (const [col, isE] of [[C.b, false], [C.e, true]]) {
+    for (let xx = x0; xx < W; xx += 12) {
+      const v = Math.sin(k * xx - ph), a = fade(xx);
+      x.strokeStyle = rgba(col, 0.28 * a); x.lineWidth = 1.2; x.beginPath(); x.moveTo(xx, cy);
+      isE ? x.lineTo(xx, cy - A * v) : x.lineTo(xx + A * 0.55 * v, cy + A * 0.45 * v); x.stroke();
+    }
+    x.lineWidth = 2.4; x.beginPath();
+    for (let xx = x0; xx <= W; xx += 3) {
+      const v = Math.sin(k * xx - ph), px = isE ? xx : xx + A * 0.55 * v, py = isE ? cy - A * v : cy + A * 0.45 * v;
+      xx === x0 ? x.moveTo(px, py) : x.lineTo(px, py);
+    }
+    const g = x.createLinearGradient(x0, 0, x0 + 160, 0); g.addColorStop(0, rgba(col, 0)); g.addColorStop(1, rgba(col, narrow ? 0.45 : 0.9));
+    x.strokeStyle = g; x.stroke();
+  }
+}
+animate(dt => { if (!reduceMotion) ph += dt * 1.6; draw(); });
+})();
+
+</script>
+</body>
+</html>

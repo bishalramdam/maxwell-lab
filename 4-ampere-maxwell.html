@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ampère–Maxwell Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,650;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=STIX+Two+Text:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#EDF1F4; --panel:#FFFFFF; --panel-2:#F5F7F9; --ink:#15202B; --muted:#5A6774; --line:#D3DAE1;
+  --stage:#F9FBFC; --grid:#E3E9EE;
+  --e:#E0580C; --b:#1868C9; --pos:#D0312D; --neg:#3552C9; --gold:#C79400; --copper:#B26A34;
+  --accent:#0A7C74; --accent-ink:#FFFFFF; --spole:#8795A3; --warn:#B7410E; --ok:#1F8A4C;
+  --f-display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --f-math:"STIX Two Text", "Cambria Math", "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#0D131A; --panel:#141D27; --panel-2:#101820; --ink:#E4EBF2; --muted:#93A2B1; --line:#24313F;
+    --stage:#0A1016; --grid:#151F29;
+    --e:#FF8B3D; --b:#4CA2FF; --pos:#FF5B50; --neg:#7D95FF; --gold:#F2C84B; --copper:#D98D52;
+    --accent:#3CC4BA; --accent-ink:#061312; --spole:#6E7D8C; --warn:#FF8A5B; --ok:#4CCB84;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0D131A; --panel:#141D27; --panel-2:#101820; --ink:#E4EBF2; --muted:#93A2B1; --line:#24313F;
+  --stage:#0A1016; --grid:#151F29;
+  --e:#FF8B3D; --b:#4CA2FF; --pos:#FF5B50; --neg:#7D95FF; --gold:#F2C84B; --copper:#D98D52;
+  --accent:#3CC4BA; --accent-ink:#061312; --spole:#6E7D8C; --warn:#FF8A5B; --ok:#4CCB84;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg); color:var(--ink); font:15px/1.6 var(--f-body); -webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* ---------- nav ---------- */
+.nav{position:sticky; top:0; z-index:10; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+.nav-in{max-width:1240px; margin:0 auto; padding:10px 20px; display:flex; align-items:center; gap:18px; flex-wrap:wrap}
+.brand{font:700 17px/1 var(--f-display); letter-spacing:-.01em; color:var(--ink); text-decoration:none; display:flex; align-items:center; gap:8px}
+.brand svg{width:22px;height:22px}
+.nav-links{display:flex; gap:4px; flex-wrap:wrap; flex:1}
+.nav-links a{font-size:13px; color:var(--muted); text-decoration:none; padding:6px 10px; border-radius:6px; white-space:nowrap}
+.nav-links a:hover{color:var(--ink); background:var(--panel)}
+.nav-links a[aria-current="page"]{color:var(--ink); background:var(--panel); box-shadow:inset 0 0 0 1px var(--line)}
+.nav-links a .n{font-family:var(--f-mono); font-size:11px; margin-right:5px; color:var(--accent)}
+@media (max-width:700px){ .nav-in{gap:8px 12px; padding:8px 16px} .brand{flex:1} .nav-links{order:3; flex:1 1 100%; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none} .wrap{padding-inline:16px} }
+.theme-btn{border:1px solid var(--line); background:var(--panel); border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer; color:var(--muted)}
+
+/* ---------- page ---------- */
+.wrap{max-width:1240px; margin:0 auto; padding-inline:20px; padding-block:28px 64px}
+.eyebrow{font:600 12px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--accent)}
+h1,h2,h3{font-family:var(--f-display); text-wrap:balance; letter-spacing:-.015em; margin:0}
+h1{font-size:clamp(28px,4.2vw,44px); line-height:1.08; font-weight:700}
+h2{font-size:22px; line-height:1.2; font-weight:650}
+h3{font-size:16px; font-weight:650}
+p{margin:0}
+.lede{color:var(--muted); font-size:17px; max-width:62ch}
+
+.lab-head{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:28px; align-items:end; margin-bottom:22px}
+.lab-head .t{display:flex; flex-direction:column; gap:12px}
+@media (max-width:860px){ .lab-head{grid-template-columns:1fr; gap:18px} }
+
+/* ---------- equations ---------- */
+.eqbox{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px 14px; display:flex; flex-direction:column; gap:10px}
+.eqbox-top{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap}
+.eq{font-family:var(--f-math); font-size:clamp(22px,3vw,30px); line-height:1.3; white-space:nowrap; overflow-x:auto; padding-block:4px}
+.eq .v{font-weight:700; font-style:normal}
+.eq i{font-style:italic}
+.eq sub{font-size:.55em}
+.frac{display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; font-size:.82em; line-height:1.15; margin-inline:.12em}
+.frac>span:first-child{border-bottom:1px solid currentColor; padding-inline:.15em}
+.eq .df, .eq .if{display:none}
+html:not(.form-int) .eq .df{display:inline}
+html.form-int .eq .if{display:inline}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; padding:2px; background:var(--panel-2)}
+.seg button{border:0; background:transparent; padding:5px 10px; border-radius:6px; font-size:12px; cursor:pointer; color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--panel); color:var(--ink); box-shadow:0 0 0 1px var(--line)}
+.eq-key{font-size:13px; color:var(--muted); display:flex; flex-wrap:wrap; gap:4px 14px}
+.eq-key b{font-family:var(--f-math); font-size:15px; color:var(--ink); font-weight:700}
+.eq-key i{font-family:var(--f-math); font-size:15px; color:var(--ink)}
+
+/* ---------- bench ---------- */
+.bench{display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:16px; align-items:start}
+@media (max-width:960px){ .bench{grid-template-columns:1fr} }
+.stage-col{display:flex; flex-direction:column; gap:10px; min-width:0}
+.toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.btn{border:1px solid var(--line); background:var(--panel); padding:7px 12px; border-radius:8px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; line-height:1.1}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.btn .dot{width:10px;height:10px;border-radius:50%}
+.btn[aria-pressed="true"]{box-shadow:inset 0 0 0 1.5px var(--accent); color:var(--accent)}
+.toolbar .sep{width:1px; align-self:stretch; background:var(--line); margin-inline:2px}
+.canvas-frame{position:relative; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--stage)}
+.canvas-frame canvas{display:block; width:100%; touch-action:none; user-select:none; -webkit-user-select:none}
+.hint{position:absolute; left:12px; bottom:10px; font-size:12px; color:var(--muted); background:color-mix(in srgb, var(--stage) 80%, transparent); padding:3px 8px; border-radius:6px; pointer-events:none}
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--muted)}
+.legend > span{display:inline-flex; align-items:center; gap:6px}
+.legend .sw{width:18px; height:3px; border-radius:2px}
+.legend .sw.dash{background:none!important; border-top:2px dashed; height:0}
+.strip-frame{border:1px solid var(--line); border-radius:10px; background:var(--stage); padding:8px 10px 6px}
+.strip-frame canvas{display:block; width:100%; height:120px}
+
+.side{display:flex; flex-direction:column; gap:14px}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px}
+.card h3{margin-bottom:10px; font-size:13px; font-family:var(--f-mono); font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.meter{display:grid; grid-template-columns:1fr auto; gap:6px 12px; align-items:baseline}
+.meter .k{font-size:13px; color:var(--muted)}
+.meter .k i, .meter .k b{font-family:var(--f-math); font-size:15px; color:var(--ink)}
+.meter .val{font:600 18px/1.2 var(--f-mono); font-variant-numeric:tabular-nums; text-align:right}
+.meter .val small{font-size:12px; color:var(--muted); font-weight:400; margin-left:3px}
+.meter hr{grid-column:1/-1; border:0; border-top:1px dashed var(--line); margin:4px 0; width:100%}
+.verdict{margin-top:10px; font-size:13px; padding:8px 10px; border-radius:8px; background:var(--panel-2); border:1px solid var(--line); display:flex; gap:8px; align-items:flex-start}
+.verdict .pill{font:600 11px/1 var(--f-mono); padding:4px 6px; border-radius:4px; background:var(--ok); color:var(--panel); white-space:nowrap; letter-spacing:.04em}
+.verdict.bad .pill{background:var(--warn)}
+.ctrl{display:flex; flex-direction:column; gap:4px; margin-bottom:12px}
+.ctrl:last-child{margin-bottom:0}
+.ctrl label{display:flex; align-items:baseline; gap:.3em; font-size:13px; color:var(--muted)}
+.ctrl label output{margin-left:auto}
+.ctrl label output{font-family:var(--f-mono); color:var(--ink); font-variant-numeric:tabular-nums}
+input[type=range]{width:100%; accent-color:var(--accent)}
+.check{display:flex; gap:8px; align-items:center; font-size:13px; cursor:pointer; margin-top:4px}
+.check input{accent-color:var(--accent); width:16px; height:16px}
+.try{margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:10px; counter-reset:t}
+.try li{font-size:13.5px; line-height:1.5; position:relative; padding-left:30px; counter-increment:t}
+.try li::before{content:counter(t); position:absolute; left:0; top:1px; font:600 11px/18px var(--f-mono); width:20px; height:20px; text-align:center; border-radius:50%; border:1px solid var(--line); color:var(--accent); box-sizing:border-box}
+
+.explain{margin-top:40px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:28px; border-top:1px solid var(--line); padding-top:28px}
+.explain > div{display:flex; flex-direction:column; gap:8px}
+.explain p{color:var(--muted); font-size:14.5px; max-width:60ch}
+.explain p b{color:var(--ink); font-weight:600}
+@media (max-width:860px){ .explain{grid-template-columns:1fr; gap:22px} }
+.pager{margin-top:40px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap}
+.pager a{display:flex; flex-direction:column; gap:2px; padding:12px 16px; border:1px solid var(--line); border-radius:10px; background:var(--panel); text-decoration:none; color:var(--ink); min-width:200px}
+.pager a small{color:var(--muted); font-size:12px}
+.pager a.next{text-align:right; margin-left:auto}
+.m{font-family:var(--f-math); font-size:1.08em}
+.m b{font-weight:700}
+@media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto!important} }
+
+</style>
+</head>
+<body>
+<header class="nav"><div class="nav-in"><a class="brand" href="index.html"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2 12c2.5-7 5-7 7.5 0s5 7 7.5 0 3.5-5 5-3" stroke="var(--e)" stroke-width="2" stroke-linecap="round"/><path d="M2 12c2.5 5 5 5 7.5 0s5-5 7.5 0 3.5 4 5 2" stroke="var(--b)" stroke-width="2" stroke-linecap="round" opacity=".8"/></svg>Maxwell Lab</a><nav class="nav-links" aria-label="Benches"><a href="index.html">Overview</a><a href="1-gauss-electric.html"><span class="n">1</span>Gauss · E</a><a href="2-gauss-magnetic.html"><span class="n">2</span>Gauss · B</a><a href="3-faraday.html"><span class="n">3</span>Faraday</a><a href="4-ampere-maxwell.html" aria-current="page"><span class="n">4</span>Ampère–Maxwell</a><a href="5-light.html"><span class="n">5</span>Light</a></nav><button class="theme-btn" id="themeBtn" type="button">Dark mode</button></div></header>
+<main class="wrap">
+  <section class="lab-head">
+    <div class="t">
+      <span class="eyebrow">Law 4 of 4 · Ampère–Maxwell law</span>
+      <h1>Electric current, and a changing electric field, both make magnetic field circle around them</h1>
+      <p class="lede">Ampère found that a current wraps itself in a magnetic field. Maxwell noticed that this fails inside a charging capacitor, where no current flows. His fix, the changing electric field term, is what later let him predict light.</p>
+    </div>
+    <div class="eqbox">
+      <div class="eqbox-top">
+        <span class="eyebrow" style="color:var(--muted)">The equation</span>
+        <div class="seg form-toggle" role="group" aria-label="Equation form">
+          <button type="button" data-form="diff" aria-pressed="true">Differential</button>
+          <button type="button" data-form="int" aria-pressed="false">Integral</button>
+        </div>
+      </div>
+      <div class="eq">
+        <span class="df">∇ × <span class="v">B</span> = <i>μ</i><sub>0</sub><span class="v">J</span> + <i>μ</i><sub>0</sub><i>ε</i><sub>0</sub><span class="frac"><span>∂<span class="v">E</span></span><span>∂<i>t</i></span></span></span>
+        <span class="if">∮<sub><i>C</i></sub> <span class="v">B</span> · d<span class="v">l</span> = <i>μ</i><sub>0</sub><i>I</i><sub>enc</sub> + <i>μ</i><sub>0</sub><i>ε</i><sub>0</sub><span class="frac"><span>d<i>Φ</i><sub>E</sub></span><span>d<i>t</i></span></span></span>
+      </div>
+      <div class="eq-key">
+        <span><b>J</b>, <i>I</i> current</span><span><i>ε</i><sub>0</sub> d<i>Φ</i><sub>E</sub>/d<i>t</i> displacement current</span><span><i>μ</i><sub>0</sub> = 1.2566 × 10⁻⁶ N/A²</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="bench">
+    <div class="stage-col">
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Experiment">
+          <button type="button" id="modeWire" aria-pressed="true">Wires and compasses</button>
+          <button type="button" id="modeCap" aria-pressed="false">Charging capacitor</button>
+        </div>
+        <span class="sep"></span>
+        <span id="wireTools" style="display:contents">
+          <button class="btn" data-preset="one" type="button">One wire</button>
+          <button class="btn" data-preset="same" type="button">Two, same way</button>
+          <button class="btn" data-preset="cable" type="button">Two, opposite</button>
+          <button class="btn" data-preset="outside" type="button">Wire outside loop</button>
+          <button class="btn" id="addWire" type="button">Add wire</button>
+        </span>
+      </div>
+      <div class="canvas-frame">
+        <canvas id="cv" aria-label="Magnetic field around current-carrying wires"></canvas>
+        <div class="hint" id="hint">Looking down the wires · drag wires or the loop · click a wire to select it</div>
+      </div>
+      <div class="strip-frame" id="stripBox" hidden>
+        <canvas id="strip" aria-label="Current and displacement current over time"></canvas>
+      </div>
+      <div class="legend" id="legWire">
+        <span><span class="sw" style="background:var(--muted)"></span>Iron filings</span>
+        <span>⊙ current toward you · ⊗ current away</span>
+        <span><span class="sw" style="background:var(--pos)"></span>Loop rim: <b>B</b> along the loop</span>
+        <span><span class="sw" style="background:var(--neg)"></span>against it</span>
+      </div>
+      <div class="legend" id="legCap" hidden>
+        <span><span class="sw" style="background:var(--gold)"></span>Conduction current <span class="m"><i>I</i></span></span>
+        <span><span class="sw dash" style="border-color:var(--e)"></span>Displacement current <span class="m"><i>ε</i><sub>0</sub>d<i>Φ</i><sub>E</sub>/d<i>t</i></span></span>
+        <span><span class="sw" style="background:var(--muted)"></span><b>E</b> in the gap</span>
+        <span><span class="sw" style="background:var(--b)"></span>Magnetic field rings</span>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="card" id="cardWire">
+        <h3>Readings</h3>
+        <div class="meter">
+          <span class="k">Current through loop, <i>I</i><sub>enc</sub></span><span class="val" id="rI">0<small>A</small></span>
+          <span class="k">Measured ∮<b>B</b>·d<b>l</b> / <i>μ</i><sub>0</sub></span><span class="val" id="rCirc">0<small>A</small></span>
+          <hr>
+          <span class="k">Selected wire current</span><span class="val" id="rSel">0<small>A</small></span>
+        </div>
+        <div class="verdict" id="vWire"><span class="pill">MATCH</span><span id="vWireText"></span></div>
+      </div>
+      <div class="card" id="cardCap" hidden>
+        <h3>Readings at the loop</h3>
+        <div class="meter">
+          <span class="k">Conduction current through surface</span><span class="val" id="rCond">0<small>A</small></span>
+          <span class="k">Displacement current through surface</span><span class="val" id="rDisp">0<small>A</small></span>
+          <hr>
+          <span class="k">∮<b>B</b>·d<b>l</b> / <i>μ</i><sub>0</sub> predicted</span><span class="val" id="rPred">0<small>A</small></span>
+        </div>
+        <div class="verdict" id="vCap"><span class="pill">CONSISTENT</span><span id="vCapText"></span></div>
+      </div>
+      <div class="card">
+        <h3>Controls</h3>
+        <div id="ctlWire">
+          <div class="ctrl"><label for="cur">Selected wire current <output for="cur"></output></label><input type="range" id="cur" min="-10" max="10" step="0.5" value="5"></div>
+          <div class="ctrl"><label for="lr">Loop radius <output for="lr"></output></label><input type="range" id="lr" min="40" max="280" value="160"></div>
+          <button class="btn" id="delWire" type="button">Remove selected wire</button>
+        </div>
+        <div id="ctlCap" hidden>
+          <div class="ctrl"><label for="loopx">Loop position <output for="loopx"></output></label><input type="range" id="loopx" min="80" max="920" value="300"></div>
+          <div class="ctrl"><label for="freq">Source frequency <output for="freq"></output></label><input type="range" id="freq" min="0.1" max="1.2" step="0.05" value="0.4"></div>
+          <div class="ctrl"><label>Surface bounded by the loop</label>
+            <div class="seg" role="group" aria-label="Surface shape"><button type="button" id="sFlat" aria-pressed="true">Flat disk</button><button type="button" id="sBag" aria-pressed="false">Bag into the gap</button></div>
+          </div>
+          <label class="check"><input type="checkbox" id="maxwell" checked> Include Maxwell's displacement current</label>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Try this</h3>
+        <ol class="try" id="tryWire">
+          <li>Set the current to zero. Every compass swings back to point north, the way Earth's field pulls it.</li>
+          <li>Flip the current's sign. The compasses turn around. Curl your right hand's fingers to predict which way.</li>
+          <li>Load <b>Two, opposite</b> and put the loop around both. Zero current inside, so the circulation is zero, even though B isn't.</li>
+          <li>Move a wire just outside the loop. It stops counting.</li>
+        </ol>
+        <ol class="try" id="tryCap" hidden>
+          <li>Slide the loop into the gap between the plates. No charge crosses the gap, yet the field rings are still there.</li>
+          <li>Untick <b>Include Maxwell's displacement current</b>. Now the gap has no magnetic field, and a contradiction appears.</li>
+          <li>With the loop on the wire, switch the surface to <b>Bag into the gap</b>. Same loop, different surface: only Maxwell's term gives the same answer.</li>
+        </ol>
+      </div>
+    </aside>
+  </section>
+
+  <section class="explain">
+    <div>
+      <h2>Right-hand rule</h2>
+      <p>Point your right thumb along the current. Your fingers curl the way the magnetic field circles. That's why the compasses line up in rings around each wire, and why two opposite currents cancel far away, the reason power cords run both wires side by side.</p>
+    </div>
+    <div>
+      <h2>Maxwell's correction</h2>
+      <p>Ampère's law says the circulation of <b>B</b> around a loop equals the current through <b>any</b> surface that loop bounds. Around a capacitor, a flat disk catches the wire's current but a bag that dips into the gap catches none. Maxwell resolved this in 1861–62: a <b>changing electric field</b> counts as current too.</p>
+    </div>
+    <div>
+      <h2>Why it matters</h2>
+      <p>Electromagnets, motors, MRI scanners and relays all rely on current making magnetic field. The displacement current term is quieter but bigger in consequence: with it, a changing E makes B, and by Faraday a changing B makes E. That loop sustains itself as a wave.</p>
+    </div>
+  </section>
+
+  <nav class="pager" aria-label="Next and previous">
+    <a href="3-faraday.html"><small>← Law 3</small>Faraday's law of induction</a>
+    <a class="next" href="5-light.html"><small>Next · All four together →</small>Light as an electromagnetic wave</a>
+  </nav>
+</main>
+
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- theme colors ---------- */
+const C = {};
+const themeListeners = [];
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  ["bg","panel","panel-2","ink","muted","line","stage","grid","e","b","pos","neg","gold","copper","accent","spole","warn","ok"]
+    .forEach(k => C[k] = cs.getPropertyValue("--" + k).trim());
+  themeListeners.forEach(f => f());
+}
+function rgba(hex, a) {
+  let h = hex.replace("#", "");
+  if (h.length === 3) h = h.split("").map(c => c + c).join("");
+  const n = parseInt(h, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+readColors();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", readColors);
+function isDark() {
+  const t = document.documentElement.dataset.theme;
+  return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+}
+document.addEventListener("DOMContentLoaded", () => {
+  const tb = $("#themeBtn");
+  const label = () => tb && (tb.textContent = isDark() ? "Light mode" : "Dark mode");
+  if (tb) { label(); tb.addEventListener("click", () => { document.documentElement.dataset.theme = isDark() ? "light" : "dark"; readColors(); label(); }); }
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", label);
+  // equation form toggle
+  $$(".form-toggle").forEach(seg => {
+    const btns = $$("button", seg);
+    btns.forEach(b => b.addEventListener("click", () => {
+      document.documentElement.classList.toggle("form-int", b.dataset.form === "int");
+      $$(".form-toggle button").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.form === b.dataset.form)));
+    }));
+  });
+});
+
+/* ---------- stage: canvas with a fixed virtual coordinate system ---------- */
+class Stage {
+  constructor(canvas, VW, VH) {
+    this.c = canvas; this.ctx = canvas.getContext("2d");
+    this.VW = VW; this.VH = VH; this.s = 1; this.visible = true; this.onresize = null;
+    canvas.style.aspectRatio = `${VW} / ${VH}`;
+    new ResizeObserver(() => this.resize()).observe(canvas);
+    new IntersectionObserver(es => { this.visible = es[0].isIntersecting; }).observe(canvas);
+    this.resize();
+  }
+  resize() {
+    const r = this.c.getBoundingClientRect();
+    if (!r.width) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.c.width = Math.round(r.width * dpr);
+    this.c.height = Math.round(r.width * dpr * this.VH / this.VW);
+    this.s = this.c.width / this.VW;
+    this.onresize && this.onresize();
+  }
+  begin() {
+    const x = this.ctx;
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    x.fillStyle = C.stage; x.fillRect(0, 0, this.c.width, this.c.height);
+    x.setTransform(this.s, 0, 0, this.s, 0, 0);
+    return x;
+  }
+  toV(e) {
+    const r = this.c.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width * this.VW, y: (e.clientY - r.top) / r.height * this.VH };
+  }
+  grid(step = 40) {
+    const x = this.ctx; x.strokeStyle = C.grid; x.lineWidth = 1; x.beginPath();
+    for (let i = step; i < this.VW; i += step) { x.moveTo(i, 0); x.lineTo(i, this.VH); }
+    for (let j = step; j < this.VH; j += step) { x.moveTo(0, j); x.lineTo(this.VW, j); }
+    x.stroke();
+  }
+}
+
+/* ---------- drag helper ----------
+   getTargets() returns [{hit(p)->bool, start(p), move(p), end(), cursor}] in priority order */
+function makeDraggable(stage, getTargets, onChange) {
+  let active = null, pid = null;
+  const cv = stage.c;
+  cv.addEventListener("pointerdown", e => {
+    const p = stage.toV(e);
+    for (const t of getTargets()) {
+      if (t.hit(p)) { active = t; pid = e.pointerId; cv.setPointerCapture(pid); t.start && t.start(p); cv.style.cursor = "grabbing"; e.preventDefault(); onChange && onChange(); return; }
+    }
+  });
+  cv.addEventListener("pointermove", e => {
+    const p = stage.toV(e);
+    if (active && e.pointerId === pid) { active.move(p); onChange && onChange(); return; }
+    const t = getTargets().find(t => t.hit(p));
+    cv.style.cursor = t ? (t.cursor || "grab") : "default";
+  });
+  const end = e => { if (active && e.pointerId === pid) { active.end && active.end(); active = null; cv.style.cursor = "default"; onChange && onChange(); } };
+  cv.addEventListener("pointerup", end);
+  cv.addEventListener("pointercancel", end);
+}
+
+/* ---------- animation loop ---------- */
+function animate(fn) {
+  let last = performance.now();
+  function f(t) {
+    const dt = Math.min(0.05, (t - last) / 1000); last = t;
+    fn(dt, t / 1000);
+    requestAnimationFrame(f);
+  }
+  requestAnimationFrame(f);
+}
+
+/* ---------- drawing helpers ---------- */
+function arrow(x, x1, y1, x2, y2, h = 7) {
+  const a = Math.atan2(y2 - y1, x2 - x1);
+  x.beginPath(); x.moveTo(x1, y1); x.lineTo(x2, y2); x.stroke();
+  x.beginPath(); x.moveTo(x2, y2);
+  x.lineTo(x2 - h * Math.cos(a - 0.45), y2 - h * Math.sin(a - 0.45));
+  x.lineTo(x2 - h * Math.cos(a + 0.45), y2 - h * Math.sin(a + 0.45));
+  x.closePath(); x.fill();
+}
+function polyline(x, pts) {
+  x.beginPath(); x.moveTo(pts[0], pts[1]);
+  for (let i = 2; i < pts.length; i += 2) x.lineTo(pts[i], pts[i + 1]);
+}
+function label(x, text, px, py, { color = C.muted, size = 13, align = "left", font = "var(--f-mono)", weight = 500 } = {}) {
+  x.fillStyle = color; x.textAlign = align; x.textBaseline = "middle";
+  x.font = `${weight} ${size}px "IBM Plex Mono", ui-monospace, monospace`;
+  x.fillText(text, px, py);
+}
+
+/* Field line tracer (RK2, normalized direction). field(x,y) -> [bx,by]. sign = +1 along field, -1 against. */
+function traceLine(field, x, y, sign, { step = 4, max = 2000, stop } = {}) {
+  const pts = [x, y];
+  for (let i = 0; i < max; i++) {
+    let [bx, by] = field(x, y); let m = Math.hypot(bx, by);
+    if (m < 1e-12) break;
+    const hx = x + sign * 0.5 * step * bx / m, hy = y + sign * 0.5 * step * by / m;
+    [bx, by] = field(hx, hy); m = Math.hypot(bx, by);
+    if (m < 1e-12) break;
+    x += sign * step * bx / m; y += sign * step * by / m;
+    pts.push(x, y);
+    const s = stop && stop(x, y, i);
+    if (s) return { pts, end: s };
+  }
+  return { pts, end: null };
+}
+
+/* Count signed crossings of a polyline (oriented along the field) through a circle. */
+function countCrossings(pts, cx, cy, R) {
+  let out = 0, inn = 0;
+  let prev = Math.hypot(pts[0] - cx, pts[1] - cy) - R;
+  for (let i = 2; i < pts.length; i += 2) {
+    const d = Math.hypot(pts[i] - cx, pts[i + 1] - cy) - R;
+    if (prev < 0 && d >= 0) out++;
+    else if (prev >= 0 && d < 0) inn++;
+    prev = d;
+  }
+  return [out, inn];
+}
+
+/* ---------- strip chart ---------- */
+class Strip {
+  constructor(canvas, series, span = 6) {
+    this.c = canvas; this.x = canvas.getContext("2d"); this.series = series; this.span = span;
+    this.data = []; // {t, v:[...]}
+    this.scale = series.map(s => s.min || 1e-9);
+    new ResizeObserver(() => this.size()).observe(canvas); this.size();
+  }
+  size() { const r = this.c.getBoundingClientRect(); const d = Math.min(devicePixelRatio || 1, 2); this.c.width = r.width * d; this.c.height = r.height * d; this.d = d; }
+  push(t, v) { this.data.push({ t, v }); while (this.data.length && this.data[0].t < t - this.span) this.data.shift(); }
+  clear() { this.data = []; }
+  draw() {
+    const x = this.x, W = this.c.width / this.d, H = this.c.height / this.d;
+    x.setTransform(this.d, 0, 0, this.d, 0, 0); x.clearRect(0, 0, W, H);
+    x.strokeStyle = C.grid; x.lineWidth = 1; x.beginPath();
+    for (let i = 1; i < 6; i++) { x.moveTo(W * i / 6, 0); x.lineTo(W * i / 6, H); }
+    x.stroke();
+    x.strokeStyle = C.line; x.beginPath(); x.moveTo(0, H / 2); x.lineTo(W, H / 2); x.stroke();
+    if (this.data.length < 2) return;
+    const tEnd = this.data[this.data.length - 1].t, t0 = tEnd - this.span;
+    this.series.forEach((s, k) => {
+      let mx = s.fixed || 0;
+      if (!s.fixed) { for (const d of this.data) mx = Math.max(mx, Math.abs(d.v[k])); mx = Math.max(mx, s.min || 1e-9); this.scale[k] = lerp(this.scale[k], mx, 0.08); mx = this.scale[k]; }
+      x.strokeStyle = C[s.color] || s.color; x.lineWidth = s.width || 2; x.setLineDash(s.dash || []);
+      x.beginPath();
+      this.data.forEach((d, i) => {
+        const px = (d.t - t0) / this.span * W, py = H / 2 - d.v[k] / mx * (H / 2 - 8);
+        i ? x.lineTo(px, py) : x.moveTo(px, py);
+      });
+      x.stroke(); x.setLineDash([]);
+    });
+  }
+}
+
+function fmt(v, d = 2) { const s = v.toFixed(d); return (s === "-" + (0).toFixed(d)) ? (0).toFixed(d) : s; }
+function signed(v, d = 2) { const s = fmt(v, d); return (parseFloat(s) > 0 ? "+" : "") + s; }
+function bindRange(id, fn) {
+  const el = document.getElementById(id), out = document.querySelector(`output[for="${id}"]`);
+  const upd = () => { const r = fn(parseFloat(el.value)); if (out && r !== undefined) out.textContent = r; };
+  el.addEventListener("input", upd); upd(); return el;
+}
+function pressGroup(btns, onPick) {
+  btns.forEach(b => b.addEventListener("click", () => { btns.forEach(x => x.setAttribute("aria-pressed", String(x === b))); onPick(b); }));
+}
+
+</script>
+<script>
+(() => {
+const VW = 1000, VH = 600;
+const st = new Stage($("#cv"), VW, VH);
+const strip = new Strip($("#strip"), [{ color: "muted", fixed: 1.15, width: 1.4 }, { color: "gold", fixed: 2.3, width: 3 }, { color: "e", fixed: 2.3, width: 2, dash: [6, 5] }]);
+let mode = "wire";
+
+/* ============ wires & compasses ============ */
+let wires = [], sel = 0, loop = { x: 500, y: 300, R: 160 }, filings = [], rim = [], circ = 0, ienc = 0, dirtyW = true;
+const EARTH = 0.004, SOFT = 30;
+const needles = [];
+for (let gx = 50; gx < VW; gx += 60) for (let gy = 45; gy < VH; gy += 60) needles.push({ x: gx, y: gy, th: -Math.PI / 2, w: 0 });
+
+function Bw(x, y) {
+  let bx = 0, by = 0;
+  for (const w of wires) { const dx = x - w.x, dy = y - w.y, k = w.I / (dx * dx + dy * dy + SOFT); bx += dy * k; by -= dx * k; }
+  return [bx * 0.1, by * 0.1];
+}
+function computeW() {
+  filings = [];
+  for (let gx = 8; gx < VW; gx += 14) for (let gy = 8; gy < VH; gy += 14) {
+    const x = gx + ((gx * 7 + gy * 13) % 9) - 4, y = gy + ((gx * 11 + gy * 3) % 9) - 4;
+    const [bx, by] = Bw(x, y), m = Math.hypot(bx, by); if (m < 3e-5) continue;
+    filings.push([x, y, bx / m, by / m, clamp(Math.log10(m * 1e4) / 2.2, 0.05, 1)]);
+  }
+  const N = 720; let s = 0; rim = [];
+  for (let i = 0; i < N; i++) {
+    const a = (i + .5) / N * TAU, px = loop.x + loop.R * Math.cos(a), py = loop.y + loop.R * Math.sin(a);
+    const [bx, by] = Bw(px, py), bt = bx * Math.sin(a) - by * Math.cos(a); // anticlockwise on screen
+    s += bt * loop.R * TAU / N; if (i % 4 === 0) rim.push(bt);
+  }
+  circ = s / 0.1 / TAU;
+  ienc = wires.reduce((t, w) => t + (Math.hypot(w.x - loop.x, w.y - loop.y) < loop.R ? w.I : 0), 0);
+  $("#rI").innerHTML = signed(ienc, 2) + "<small>A</small>";
+  $("#rCirc").innerHTML = signed(circ, 2) + "<small>A</small>";
+  $("#rSel").innerHTML = (wires[sel] ? signed(wires[sel].I, 1) : "—") + "<small>A</small>";
+  const nearRim = wires.some(w => Math.abs(Math.hypot(w.x - loop.x, w.y - loop.y) - loop.R) < 10);
+  const v = $("#vWire");
+  if (nearRim) { v.classList.add("bad"); v.querySelector(".pill").textContent = "ON LOOP"; $("#vWireText").textContent = "A wire sits on the loop itself. Move it clearly inside or outside."; }
+  else { v.classList.remove("bad"); v.querySelector(".pill").textContent = "MATCH";
+    $("#vWireText").textContent = ienc === 0 && wires.length ? "No net current passes through the loop, so B's circulation adds up to zero." : `Circulation of B equals μ₀ × ${fmt(ienc, 1)} A, the current passing through the loop.`; }
+  dirtyW = false;
+}
+function stepNeedles(dt) {
+  for (const n of needles) {
+    const [bx, by] = Bw(n.x, n.y), tx = bx, ty = by - EARTH;
+    const target = Math.atan2(ty, tx), strength = clamp(Math.hypot(tx, ty) / EARTH, 0.6, 8);
+    let d = target - n.th; d = Math.atan2(Math.sin(d), Math.cos(d));
+    n.w += (d * 26 * strength - 5 * n.w) * dt; n.th += n.w * dt;
+    if (reduceMotion) { n.th = target; n.w = 0; }
+  }
+}
+function drawWire(x) {
+  const X = st.begin(); st.grid(40);
+  X.fillStyle = rgba(C.accent, 0.06); X.beginPath(); X.arc(loop.x, loop.y, loop.R, 0, TAU); X.fill();
+  X.lineWidth = 1.3; X.lineCap = "round";
+  for (const [lo, hi, al] of [[0, .33, .25], [.33, .66, .45], [.66, 1.01, .7]]) {
+    X.strokeStyle = rgba(C.muted, al); X.beginPath();
+    for (const f of filings) { if (f[4] <= lo || f[4] > hi) continue; X.moveTo(f[0] - f[2] * 4, f[1] - f[3] * 4); X.lineTo(f[0] + f[2] * 4, f[1] + f[3] * 4); }
+    X.stroke();
+  }
+  // loop rim
+  const n = rim.length, mx = Math.max(1e-9, ...rim.map(Math.abs));
+  X.lineWidth = 5;
+  for (let i = 0; i < n; i++) { const v = rim[i]; X.strokeStyle = rgba(v >= 0 ? C.pos : C.neg, 0.12 + 0.88 * Math.sqrt(Math.abs(v) / mx)); X.beginPath(); X.arc(loop.x, loop.y, loop.R, i / n * TAU, (i + 1) / n * TAU + 0.005); X.stroke(); }
+  // direction chevrons (anticlockwise)
+  X.fillStyle = rgba(C.ink, 0.55);
+  for (let k = 0; k < 4; k++) { const a = k * TAU / 4 + Math.PI / 4, px = loop.x + (loop.R + 14) * Math.cos(a), py = loop.y + (loop.R + 14) * Math.sin(a), ta = a - Math.PI / 2;
+    X.save(); X.translate(px, py); X.rotate(ta); X.beginPath(); X.moveTo(6, 0); X.lineTo(-4, -5); X.lineTo(-4, 5); X.closePath(); X.fill(); X.restore(); }
+  X.fillStyle = C.accent; X.strokeStyle = C.stage; X.lineWidth = 2; X.beginPath(); X.arc(loop.x + loop.R, loop.y, 8, 0, TAU); X.fill(); X.stroke();
+  // compasses
+  for (const nd of needles) {
+    if (wires.some(w => Math.hypot(w.x - nd.x, w.y - nd.y) < 26)) continue;
+    X.save(); X.translate(nd.x, nd.y); X.rotate(nd.th);
+    X.fillStyle = rgba(C.panel, 0.9); X.strokeStyle = rgba(C.line, 1); X.lineWidth = 1; X.beginPath(); X.arc(0, 0, 15, 0, TAU); X.fill(); X.stroke();
+    X.fillStyle = C.pos; X.beginPath(); X.moveTo(13, 0); X.lineTo(0, -4); X.lineTo(0, 4); X.closePath(); X.fill();
+    X.fillStyle = C.spole; X.beginPath(); X.moveTo(-13, 0); X.lineTo(0, -4); X.lineTo(0, 4); X.closePath(); X.fill();
+    X.restore();
+  }
+  { const ly = loop.y - loop.R - 30; X.fillStyle = rgba(C.stage, 0.9); X.fillRect(loop.x - 62, ly - 10, 124, 20); label(X, "Ampèrian loop C", loop.x, ly, { align: "center", size: 12, color: C.ink }); }
+  // wires
+  wires.forEach((w, i) => {
+    X.fillStyle = C.panel; X.strokeStyle = i === sel ? C.accent : C.gold; X.lineWidth = i === sel ? 4 : 3;
+    X.beginPath(); X.arc(w.x, w.y, 15, 0, TAU); X.fill(); X.stroke();
+    X.strokeStyle = C.ink; X.fillStyle = C.ink; X.lineWidth = 2.4;
+    if (w.I > 0) { X.beginPath(); X.arc(w.x, w.y, 4, 0, TAU); X.fill(); }
+    else if (w.I < 0) { X.beginPath(); X.moveTo(w.x - 6, w.y - 6); X.lineTo(w.x + 6, w.y + 6); X.moveTo(w.x + 6, w.y - 6); X.lineTo(w.x - 6, w.y + 6); X.stroke(); }
+    label(X, `${signed(w.I, 1)} A`, w.x, w.y + 28, { align: "center", color: C.ink, size: 12, weight: 600 });
+  });
+  label(X, "N ↑ (Earth)", VW - 14, 18, { align: "right", size: 11 });
+}
+
+/* ============ charging capacitor ============ */
+const AY = 300, PL = 440, PR = 560, PH = 110, RING = 140, I0 = 2;
+let freq = 0.4, tc = 0, loopX = 300, surface = "flat", maxwell = true, dotPh = 0;
+const ringXs = [90, 160, 230, 300, 370, 470, 500, 530, 630, 700, 770, 840, 910];
+function region(x) { return x < PL ? "left" : x > PR ? "right" : "gap"; }
+function currentI() { return I0 * Math.sin(TAU * freq * tc); }
+function Qn() { return -Math.cos(TAU * freq * tc); } // normalized charge on left plate
+function stepCap(dt) {
+  tc += dt; const I = currentI();
+  dotPh += I / I0 * dt * 1.4;
+  strip.push(tc, [Qn(), I, I]);
+}
+function capReadings() {
+  const I = currentI(), r = region(loopX);
+  const inWire = r !== "gap";
+  const condFlat = inWire ? I : 0, dispFlat = inWire ? 0 : I;
+  const condBag = inWire ? 0 : I, dispBag = inWire ? I : 0;
+  const cond = surface === "flat" ? condFlat : condBag, disp = surface === "flat" ? dispFlat : dispBag;
+  const pFlat = condFlat + (maxwell ? dispFlat : 0), pBag = condBag + (maxwell ? dispBag : 0);
+  return { I, r, cond, disp, pred: surface === "flat" ? pFlat : pBag, pFlat, pBag };
+}
+function capReadout() {
+  const R = capReadings();
+  $("#rCond").innerHTML = signed(R.cond, 2) + "<small>A</small>";
+  $("#rDisp").innerHTML = signed(R.disp, 2) + `<small>A${maxwell ? "" : " (ignored)"}</small>`;
+  $("#rPred").innerHTML = signed(R.pred, 2) + "<small>A</small>";
+  const v = $("#vCap"), t = $("#vCapText");
+  if (!maxwell && Math.abs(R.pFlat - R.pBag) > 0.05) {
+    v.classList.add("bad"); v.querySelector(".pill").textContent = "CONTRADICTION";
+    t.textContent = `Flat disk predicts ${signed(R.pFlat, 2)} A, the bag predicts ${signed(R.pBag, 2)} A. Same loop, two answers: Ampère's original law breaks here.`;
+  } else if (!maxwell) {
+    v.classList.add("bad"); v.querySelector(".pill").textContent = "WAIT";
+    t.textContent = "The current is passing through zero right now. Watch a moment longer, the two surfaces will disagree.";
+  } else {
+    v.classList.remove("bad"); v.querySelector(".pill").textContent = "CONSISTENT";
+    t.textContent = R.r === "gap" ? "No charge crosses the gap, but the changing E field there carries the same 'current'. B circles the gap just like the wire." : "Flat disk or bag, both surfaces give the same circulation. Maxwell's term makes the law hold for every surface.";
+  }
+}
+function ringStrength(x) { const I = currentI() / I0; return region(x) === "gap" ? (maxwell ? I : 0) : I; }
+function drawRing(X, x, s, back, highlight) {
+  const a = Math.min(1, Math.abs(s));
+  X.strokeStyle = highlight ? C.accent : rgba(C.b, (back ? 0.25 : 0.9) * (0.15 + 0.85 * a));
+  X.lineWidth = highlight ? 3 : (back ? 1.5 : 2.4);
+  X.beginPath(); X.ellipse(x, AY, 16, RING, 0, back ? Math.PI / 2 : -Math.PI / 2, back ? Math.PI * 1.5 : Math.PI / 2); X.stroke();
+}
+function drawCap() {
+  const X = st.begin(); st.grid(40);
+  const I = currentI(), q = Qn(), R = capReadings();
+  // back halves of rings
+  ringXs.forEach(x => drawRing(X, x, ringStrength(x), true, false));
+  drawRing(X, loopX, 1, true, true);
+  // surface
+  X.fillStyle = rgba(C.accent, 0.12); X.strokeStyle = rgba(C.accent, 0.8); X.lineWidth = 1.5; X.setLineDash([5, 4]);
+  if (surface === "flat") { X.beginPath(); X.ellipse(loopX, AY, 16, RING, 0, 0, TAU); X.fill(); X.stroke(); }
+  else {
+    const r = R.r, tip = r === "left" ? 500 : r === "right" ? 500 : 330; // bag reaches into the gap, or out past the left plate
+    X.beginPath(); X.moveTo(loopX, AY - RING);
+    X.bezierCurveTo(tip, AY - RING, tip, AY - 60, tip, AY);
+    X.bezierCurveTo(tip, AY + 60, tip, AY + RING, loopX, AY + RING);
+    X.closePath(); X.fill(); X.stroke();
+  }
+  X.setLineDash([]);
+  // wires
+  X.strokeStyle = C.gold; X.lineWidth = 6; X.lineCap = "butt";
+  X.beginPath(); X.moveTo(0, AY); X.lineTo(PL, AY); X.moveTo(PR, AY); X.lineTo(VW, AY); X.stroke();
+  // moving charges in wire
+  const a = Math.abs(I) / I0;
+  X.fillStyle = rgba(C.ink, 0.25 + 0.6 * a);
+  for (let x0 = 0; x0 < VW; x0 += 28) {
+    const x = ((x0 + dotPh * 60) % VW + VW) % VW;
+    if (x > PL - 4 && x < PR + 4) continue;
+    X.beginPath(); X.arc(x, AY, 2.2, 0, TAU); X.fill();
+  }
+  // plates
+  X.fillStyle = C.ink; X.fillRect(PL - 5, AY - PH, 8, 2 * PH); X.fillRect(PR - 3, AY - PH, 8, 2 * PH);
+  // plate charges
+  const nq = Math.round(Math.abs(q) * 7);
+  for (let k = 0; k < nq; k++) {
+    const y = AY - PH + 14 + k * (2 * PH - 28) / 6;
+    label(X, q > 0 ? "+" : "−", PL - 18, y, { align: "center", color: q > 0 ? C.pos : C.neg, size: 16, weight: 700 });
+    label(X, q > 0 ? "−" : "+", PR + 20, y, { align: "center", color: q > 0 ? C.neg : C.pos, size: 16, weight: 700 });
+  }
+  // E field in gap
+  if (Math.abs(q) > 0.05) {
+    X.strokeStyle = rgba(C.muted, 0.2 + 0.8 * Math.abs(q)); X.fillStyle = X.strokeStyle; X.lineWidth = 2;
+    for (let y = AY - PH + 20; y <= AY + PH - 20; y += 36) q > 0 ? arrow(X, PL + 10, y, PR - 12, y, 8) : arrow(X, PR - 10, y, PL + 12, y, 8);
+  }
+  // displacement current arrow (dashed, orange)
+  if (Math.abs(I) > 0.05 * I0) {
+    X.strokeStyle = rgba(C.e, 0.3 + 0.7 * a); X.fillStyle = X.strokeStyle; X.setLineDash([6, 5]); X.lineWidth = 4;
+    I > 0 ? arrow(X, PL + 14, AY, PR - 14, AY, 12) : arrow(X, PR - 14, AY, PL + 14, AY, 12);
+    X.setLineDash([]);
+  }
+  // front halves of rings with circulating dots
+  ringXs.forEach(x => {
+    const s = ringStrength(x); drawRing(X, x, s, false, false);
+    if (Math.abs(s) < 0.05) return;
+    X.fillStyle = rgba(C.b, 0.3 + 0.7 * Math.abs(s));
+    for (let k = 0; k < 3; k++) { const u = ((k / 3 + dotPh * 0.5) % 1 + 1) % 1, ang = -Math.PI / 2 + u * Math.PI; X.beginPath(); X.arc(x + 16 * Math.cos(ang), AY + RING * Math.sin(ang), 3, 0, TAU); X.fill(); }
+  });
+  drawRing(X, loopX, 1, false, true);
+  label(X, "loop C", loopX, AY - RING - 16, { align: "center", color: C.accent, size: 12, weight: 600 });
+  if (!maxwell) label(X, "no B predicted in the gap", 500, AY + RING + 26, { align: "center", color: C.warn, size: 12, weight: 600 });
+  label(X, "← AC source", 12, AY - 22, { size: 11 });
+  label(X, `I = ${signed(I, 2)} A`, 14, 30, { size: 13, color: C.ink, weight: 600 });
+  label(X, `ε₀ dΦE/dt in gap = ${signed(I, 2)} A`, 14, 52, { size: 12, color: C.e });
+  label(X, "B rings circle the wire axis (front half bright, back half faint)", VW - 14, VH - 18, { align: "right", size: 11 });
+}
+
+/* ============ interaction ============ */
+let off = null;
+makeDraggable(st, () => mode !== "wire" ? [] : [
+  { hit: p => Math.hypot(p.x - loop.x - loop.R, p.y - loop.y) < 14, cursor: "ew-resize",
+    move: p => { loop.R = clamp(Math.hypot(p.x - loop.x, p.y - loop.y), 40, 280); $("#lr").value = loop.R; $('output[for="lr"]').textContent = Math.round(loop.R); dirtyW = true; } },
+  ...wires.map((w, i) => ({ hit: p => Math.hypot(p.x - w.x, p.y - w.y) < 20,
+    start: p => { sel = i; off = [w.x - p.x, w.y - p.y]; $("#cur").value = w.I; $('output[for="cur"]').textContent = signed(w.I, 1) + " A"; dirtyW = true; },
+    move: p => { w.x = clamp(p.x + off[0], 15, VW - 15); w.y = clamp(p.y + off[1], 15, VH - 15); dirtyW = true; } })),
+  { hit: p => Math.hypot(p.x - loop.x, p.y - loop.y) < loop.R, cursor: "move", start: p => off = [loop.x - p.x, loop.y - p.y],
+    move: p => { loop.x = clamp(p.x + off[0], 0, VW); loop.y = clamp(p.y + off[1], 0, VH); dirtyW = true; } }
+]);
+const presets = {
+  one: () => { wires = [{ x: 500, y: 300, I: 5 }]; loop = { x: 500, y: 300, R: 160 }; },
+  same: () => { wires = [{ x: 430, y: 300, I: 5 }, { x: 570, y: 300, I: 5 }]; loop = { x: 500, y: 300, R: 190 }; },
+  cable: () => { wires = [{ x: 460, y: 300, I: 5 }, { x: 540, y: 300, I: -5 }]; loop = { x: 500, y: 300, R: 170 }; },
+  outside: () => { wires = [{ x: 400, y: 300, I: 5 }, { x: 760, y: 300, I: 5 }]; loop = { x: 400, y: 300, R: 170 }; },
+};
+function syncCtl() { sel = clamp(sel, 0, wires.length - 1); $("#cur").value = wires[sel] ? wires[sel].I : 0; $('output[for="cur"]').textContent = (wires[sel] ? signed(wires[sel].I, 1) : "0") + " A"; $("#lr").value = loop.R; $('output[for="lr"]').textContent = Math.round(loop.R); }
+$$("[data-preset]").forEach(b => b.onclick = () => { presets[b.dataset.preset](); sel = 0; syncCtl(); dirtyW = true; });
+$("#addWire").onclick = () => { if (wires.length >= 6) return; const spots = [[200, 150], [800, 450], [800, 150], [200, 450], [500, 90], [500, 510]]; const s = spots.find(s => !wires.some(w => Math.hypot(w.x - s[0], w.y - s[1]) < 40)) || [500, 300]; wires.push({ x: s[0], y: s[1], I: 5 }); sel = wires.length - 1; syncCtl(); dirtyW = true; };
+$("#delWire").onclick = () => { if (!wires.length) return; wires.splice(sel, 1); sel = 0; syncCtl(); dirtyW = true; };
+bindRange("cur", v => { if (wires[sel]) { wires[sel].I = v; dirtyW = true; } return signed(v, 1) + " A"; });
+bindRange("lr", v => { loop.R = v; dirtyW = true; return Math.round(v); });
+bindRange("loopx", v => {
+  if (v > PL - 12 && v < PL + 12) v = v < PL ? PL - 12 : PL + 12;
+  if (v > PR - 12 && v < PR + 12) v = v < PR ? PR - 12 : PR + 12;
+  loopX = v; const r = region(v);
+  return r === "gap" ? "in the gap" : r === "left" ? "on left wire" : "on right wire";
+});
+bindRange("freq", v => { const ph = freq * tc; freq = v; tc = ph / freq; strip.clear(); return v.toFixed(2) + " Hz"; });
+pressGroup([$("#sFlat"), $("#sBag")], b => { surface = b.id === "sFlat" ? "flat" : "bag"; });
+$("#maxwell").onchange = e => { maxwell = e.target.checked; };
+
+function setMode(m) {
+  mode = m;
+  $("#modeWire").setAttribute("aria-pressed", String(m === "wire")); $("#modeCap").setAttribute("aria-pressed", String(m === "cap"));
+  const w = m === "wire";
+  $("#wireTools").hidden = !w; $("#cardWire").hidden = !w; $("#cardCap").hidden = w; $("#ctlWire").hidden = !w; $("#ctlCap").hidden = w;
+  $("#legWire").hidden = !w; $("#legCap").hidden = w; $("#stripBox").hidden = w; $("#tryWire").hidden = !w; $("#tryCap").hidden = w;
+  $("#hint").textContent = w ? "Looking down the wires · drag wires or the loop · click a wire to select it" : "Side view · an AC source charges and discharges the capacitor";
+  st.c.setAttribute("aria-label", w ? "Magnetic field around current-carrying wires" : "Charging capacitor with magnetic field rings");
+  if (!w) requestAnimationFrame(() => strip.size());
+}
+$("#modeWire").onclick = () => setMode("wire");
+$("#modeCap").onclick = () => setMode("cap");
+
+presets.one(); syncCtl();
+let fr = 0;
+animate(dt => {
+  if (!st.visible) return;
+  if (mode === "wire") { if (dirtyW) computeW(); stepNeedles(dt); drawWire(); }
+  else { stepCap(reduceMotion ? dt * 0.4 : dt); drawCap(); strip.draw(); if (++fr % 4 === 0) capReadout(); }
+});
+})();
+
+</script>
+</body>
+</html>
